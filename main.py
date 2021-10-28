@@ -2,9 +2,10 @@ import sys
 import BreezeStyleSheets.breeze_resources # looks redundant but is used to activate stylesheets
 from PyQt5.QtCore import QFile, QTextStream
 from PyQt5.uic import loadUi
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget
+from PyQt5.QtWidgets import QAction, QApplication, QMainWindow, QMenu, QMenuBar, QWidget
 from dataclasses import dataclass, field
 from typing import List
+
 
 @dataclass
 class Pages:
@@ -34,17 +35,40 @@ class Pages:
 @dataclass
 class Theme:
     theme: str = field(init=False)
-    theme_name: str
+    folder: str
+    action_name: str
+    display: str
     app: QApplication
 
     def __post_init__(self):
-        file = QFile(":/"+self.theme_name+"/stylesheet.qss")
+        file = QFile(":/"+self.folder+"/stylesheet.qss")
         file.open(QFile.ReadOnly | QFile.Text)
         stream = QTextStream(file)
         self.theme = stream.readAll()
+        self.action_name += "_theme"
     
     def activate(self):
         self.app.setStyleSheet(self.theme)
+
+@dataclass
+class ThemeAction:
+    theme: Theme
+    mainwindow: QMainWindow
+    text: str
+    action: QAction = field(init=False)
+
+    def __post_init__(self):
+        self.action = QAction(self.text, self.mainwindow)
+        self.action.setCheckable(True)
+        self.action.setObjectName(self.theme.action_name)
+        self.action.triggered['bool'].connect(lambda: self.apply()) #lambda x: self.apply() if x else x
+
+    def apply(self):
+        self.theme.activate()
+        for action in [x for x in self.action.parentWidget().children() if "_theme" in x.objectName()]:
+            action.setChecked(False)
+        self.action.setChecked(True)
+
 
 class MainWindow(QMainWindow, object):
     def __init__(self, themes: dict):
@@ -52,18 +76,11 @@ class MainWindow(QMainWindow, object):
         loadUi("main.ui", self)
         self.pages = Pages()
         self.themes = themes
-        self.themes["dark-purple"].activate()
+        for theme in self.themes.values():
+            temp_action = ThemeAction(theme, self, theme.display)
+            self.menuTheme.addAction(temp_action.action)
         self.setCentralWidget(self.pages.list[0])
         self.centralWidget().commandLinkButton_next.clicked.connect(lambda: self.themes["dark-purple"].activate())
-        self.setup_singals()
-    
-    def setup_singals(self):
-        self.dark_blue_theme.triggered.connect(lambda: self.themes["dark-blue"].activate())
-        self.dark_green_theme.triggered.connect(lambda: self.themes["dark-green"].activate())
-        self.dark_purple_theme.triggered.connect(lambda: self.themes["dark-purple"].activate())
-        self.light_blue_theme.triggered.connect(lambda: self.themes["light-blue"].activate())
-        self.light_green_theme.triggered.connect(lambda: self.themes["light-green"].activate())
-        self.light_purple_theme.triggered.connect(lambda: self.themes["light-purple"].activate())
 
     def set_active_page(self, page: QWidget):
         self.setCentralWidget(page)
@@ -77,12 +94,12 @@ class MainWindow(QMainWindow, object):
 
 def setup_themes(app: QApplication):
     themes = {}
-    themes["dark-blue"] = Theme("dark", app)
-    themes["dark-green"] = Theme("dark-green", app)
-    themes["dark-purple"] = Theme("dark-purple", app)
-    themes["light-blue"] = Theme("light", app)
-    themes["light-green"] = Theme("light-green", app)
-    themes["light-purple"] = Theme("light-purple", app)
+    themes["dark-blue"] = Theme("dark", "dark_blue", "Dark (Blue)", app)
+    themes["dark-green"] = Theme("dark-green", "dark_green", "Dark (Green)", app)
+    themes["dark-purple"] = Theme("dark-purple", "dark_purple", "Dark (Purple)", app)
+    themes["light-blue"] = Theme("light", "light_blue", "Light (Blue)", app)
+    themes["light-green"] = Theme("light-green", "light_green", "Light (Green)", app)
+    themes["light-purple"] = Theme("light-purple", "light_purple", "Light (Purple)", app)
     return themes
 
 def main():
