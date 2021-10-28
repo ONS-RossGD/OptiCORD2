@@ -33,21 +33,25 @@ class Pages:
 
 @dataclass
 class Theme:
+    """Object for Themes to be used in QtApplication"""
     theme: str = field(init=False)
     folder: str
     action_name: str
     display: str
 
     def __post_init__(self):
+        """Create theme data based on input variables"""
         file = QFile(":/"+self.folder+"/stylesheet.qss")
         file.open(QFile.ReadOnly | QFile.Text)
         stream = QTextStream(file)
         self.theme = stream.readAll()
     
-    def activate(self):
+    def apply(self):
+        """Apply the Theme"""
         QApplication.instance().setStyleSheet(self.theme)
 
 class ThemeRegistry:
+    """A Registry for all available Theme's"""
     themes = []
     def __init__(self):
         """Define and add Theme's here"""
@@ -78,11 +82,12 @@ class QThemeAction(QAction):
 
     def apply(self):
         """Apply the associated theme to its main window"""
-        self.theme.activate()
+        self.theme.apply()
         [x.setChecked(False) for x in self.parentWidget().findChildren(QThemeAction)]
         self.setChecked(True)
 
 class MainWindow(QMainWindow, object):
+    """Main window of application"""
     def __init__(self):
         super(MainWindow, self).__init__()
         loadUi("main.ui", self)
@@ -95,7 +100,7 @@ class MainWindow(QMainWindow, object):
         # temporarily apply dark purple theme while QSettings is set up
         self.findChild(QThemeAction, "dark_purple_theme").apply()
         self.setCentralWidget(self.pages.list[0])
-        self.centralWidget().commandLinkButton_next.clicked.connect(lambda: self.themes["dark-purple"].activate())
+        self.centralWidget().commandLinkButton_next.clicked.connect(lambda: self.themes["dark-purple"].apply())
 
     def set_active_page(self, page: QWidget):
         self.setCentralWidget(page)
@@ -107,12 +112,13 @@ class MainWindow(QMainWindow, object):
         self.setCentralWidget(self.pages.prev(self.centralWidget()))
 
 def main():
+    """Main loop"""
     app = QApplication(sys.argv)
     mainwindow = MainWindow()
     mainwindow.show()
     try:
         sys.exit(app.exec_())
-    except:
+    except: # TODO catch correct Exception.
         print("Exiting")
 
 if __name__ == "__main__":
