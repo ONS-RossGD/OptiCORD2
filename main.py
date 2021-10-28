@@ -44,23 +44,23 @@ class Theme:
         file.open(QFile.ReadOnly | QFile.Text)
         stream = QTextStream(file)
         self.theme = stream.readAll()
-        self.action_name += "_theme"
     
     def activate(self):
         self.app.setStyleSheet(self.theme)
 
 class QThemeAction(QAction):
+    """A QAction Object for Theme items"""
     def __init__(self, theme: Theme, parent=None):
         QAction.__init__(self, text=theme.display, parent=parent)
         self.theme = theme
         self.setCheckable(True)
         self.setObjectName(theme.action_name)
-        self.triggered['bool'].connect(lambda: self.apply()) #lambda x: self.apply() if x else x
+        self.triggered['bool'].connect(self.apply)
 
     def apply(self):
+        """Apply the associated theme to its main window"""
         self.theme.activate()
-        for action in [x for x in self.parentWidget().children() if "_theme" in x.objectName()]:
-            self.setChecked(False)
+        [x.setChecked(False) for x in self.parentWidget().findChildren(QThemeAction)]
         self.setChecked(True)
 
 class MainWindow(QMainWindow, object):
@@ -87,12 +87,12 @@ class MainWindow(QMainWindow, object):
 
 def setup_themes(app: QApplication):
     themes = {}
-    themes["dark-blue"] = Theme("dark", "dark_blue", "Dark (Blue)", app)
-    themes["dark-green"] = Theme("dark-green", "dark_green", "Dark (Green)", app)
-    themes["dark-purple"] = Theme("dark-purple", "dark_purple", "Dark (Purple)", app)
-    themes["light-blue"] = Theme("light", "light_blue", "Light (Blue)", app)
-    themes["light-green"] = Theme("light-green", "light_green", "Light (Green)", app)
-    themes["light-purple"] = Theme("light-purple", "light_purple", "Light (Purple)", app)
+    themes["dark-blue"] = Theme("dark", "dark_blue_theme", "Dark (Blue)", app)
+    themes["dark-green"] = Theme("dark-green", "dark_green_theme", "Dark (Green)", app)
+    themes["dark-purple"] = Theme("dark-purple", "dark_purple_theme", "Dark (Purple)", app)
+    themes["light-blue"] = Theme("light", "light_blue_theme", "Light (Blue)", app)
+    themes["light-green"] = Theme("light-green", "light_green_theme", "Light (Green)", app)
+    themes["light-purple"] = Theme("light-purple", "light_purple_theme", "Light (Purple)", app)
     return themes
 
 def main():
