@@ -47,7 +47,30 @@
     <property name="title">
      <string>Preferences</string>
     </property>
-    <addaction name="actionTheme"/>
+    <widget class="QMenu" name="menuTheme">
+     <property name="title">
+      <string>Theme</string>
+     </property>
+     <widget class="QMenu" name="menuDark">
+      <property name="title">
+       <string>Dark</string>
+      </property>
+      <addaction name="dark_blue_theme"/>
+      <addaction name="dark_green_theme"/>
+      <addaction name="dark_purple_theme"/>
+     </widget>
+     <widget class="QMenu" name="menuLight">
+      <property name="title">
+       <string>Light</string>
+      </property>
+      <addaction name="light_blue_theme"/>
+      <addaction name="light_green_theme"/>
+      <addaction name="light_purple_theme"/>
+     </widget>
+     <addaction name="menuDark"/>
+     <addaction name="menuLight"/>
+    </widget>
+    <addaction name="menuTheme"/>
     <addaction name="actionFont_Size"/>
    </widget>
    <addaction name="menuHelp"/>
@@ -69,11 +92,6 @@
     <string>Contact Support</string>
    </property>
   </action>
-  <action name="actionTheme">
-   <property name="text">
-    <string>Theme</string>
-   </property>
-  </action>
   <action name="actionFont_Size">
    <property name="text">
     <string>Font Size</string>
@@ -82,6 +100,36 @@
   <action name="actionChange_to_tutorial_view">
    <property name="text">
     <string>Change to tutorial view</string>
+   </property>
+  </action>
+  <action name="dark_blue_theme">
+   <property name="text">
+    <string>Blue Highlight</string>
+   </property>
+  </action>
+  <action name="dark_green_theme">
+   <property name="text">
+    <string>Green Highlight</string>
+   </property>
+  </action>
+  <action name="dark_purple_theme">
+   <property name="text">
+    <string>Purple Highlight</string>
+   </property>
+  </action>
+  <action name="light_blue_theme">
+   <property name="text">
+    <string>Blue Highlight</string>
+   </property>
+  </action>
+  <action name="light_green_theme">
+   <property name="text">
+    <string>Green Highlight</string>
+   </property>
+  </action>
+  <action name="light_purple_theme">
+   <property name="text">
+    <string>Purple Highlight</string>
    </property>
   </action>
  </widget>
