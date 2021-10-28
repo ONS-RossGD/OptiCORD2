@@ -37,7 +37,6 @@ class Theme:
     folder: str
     action_name: str
     display: str
-    app: QApplication
 
     def __post_init__(self):
         file = QFile(":/"+self.folder+"/stylesheet.qss")
@@ -46,7 +45,27 @@ class Theme:
         self.theme = stream.readAll()
     
     def activate(self):
-        self.app.setStyleSheet(self.theme)
+        QApplication.instance().setStyleSheet(self.theme)
+
+class ThemeRegistry:
+    themes = []
+    def __init__(self):
+        """Define and add Theme's here"""
+        self.themes.append(Theme("dark", "dark_blue_theme", "Dark (Blue)"))
+        self.themes.append(Theme("dark-green", "dark_green_theme", "Dark (Green)"))
+        self.themes.append(Theme("dark-purple", "dark_purple_theme", "Dark (Purple)"))
+        self.themes.append(Theme("light", "light_blue_theme", "Light (Blue)"))
+        self.themes.append(Theme("light-green", "light_green_theme", "Light (Green)"))
+        self.themes.append(Theme("light-purple", "light_purple_theme", "Light (Purple)"))
+    
+    def __call__(self) -> List[Theme]:
+        """Return a list of Theme's if ThemeRegistry is called"""
+        return self.themes
+
+    def __iter__(self) -> Theme:
+        """Defines how to iterate over Themes"""
+        for theme in self.themes:
+            yield theme
 
 class QThemeAction(QAction):
     """A QAction Object for Theme items"""
@@ -64,13 +83,16 @@ class QThemeAction(QAction):
         self.setChecked(True)
 
 class MainWindow(QMainWindow, object):
-    def __init__(self, themes: dict):
+    def __init__(self):
         super(MainWindow, self).__init__()
         loadUi("main.ui", self)
+        self.app = QApplication.instance()
         self.pages = Pages()
-        self.themes = themes
-        for theme in self.themes.values():
+        self.themes = ThemeRegistry()
+        for theme in self.themes:
             self.menuTheme.addAction(QThemeAction(theme, self))
+        
+        # temporarily apply dark purple theme while QSettings is set up
         self.findChild(QThemeAction, "dark_purple_theme").apply()
         self.setCentralWidget(self.pages.list[0])
         self.centralWidget().commandLinkButton_next.clicked.connect(lambda: self.themes["dark-purple"].activate())
@@ -84,21 +106,9 @@ class MainWindow(QMainWindow, object):
     def prev_page(self):
         self.setCentralWidget(self.pages.prev(self.centralWidget()))
 
-
-def setup_themes(app: QApplication):
-    themes = {}
-    themes["dark-blue"] = Theme("dark", "dark_blue_theme", "Dark (Blue)", app)
-    themes["dark-green"] = Theme("dark-green", "dark_green_theme", "Dark (Green)", app)
-    themes["dark-purple"] = Theme("dark-purple", "dark_purple_theme", "Dark (Purple)", app)
-    themes["light-blue"] = Theme("light", "light_blue_theme", "Light (Blue)", app)
-    themes["light-green"] = Theme("light-green", "light_green_theme", "Light (Green)", app)
-    themes["light-purple"] = Theme("light-purple", "light_purple_theme", "Light (Purple)", app)
-    return themes
-
 def main():
     app = QApplication(sys.argv)
-    themes = setup_themes(app)
-    mainwindow = MainWindow(themes)
+    mainwindow = MainWindow()
     mainwindow.show()
     try:
         sys.exit(app.exec_())
