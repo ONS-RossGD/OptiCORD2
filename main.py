@@ -6,7 +6,6 @@ from PyQt5.QtWidgets import QAction, QApplication, QMainWindow, QMenu, QMenuBar,
 from dataclasses import dataclass, field
 from typing import List
 
-
 @dataclass
 class Pages:
     list = []
@@ -50,25 +49,19 @@ class Theme:
     def activate(self):
         self.app.setStyleSheet(self.theme)
 
-@dataclass
-class ThemeAction:
-    theme: Theme
-    mainwindow: QMainWindow
-    text: str
-    action: QAction = field(init=False)
-
-    def __post_init__(self):
-        self.action = QAction(self.text, self.mainwindow)
-        self.action.setCheckable(True)
-        self.action.setObjectName(self.theme.action_name)
-        self.action.triggered['bool'].connect(lambda: self.apply()) #lambda x: self.apply() if x else x
+class QThemeAction(QAction):
+    def __init__(self, theme: Theme, parent=None):
+        QAction.__init__(self, text=theme.display, parent=parent)
+        self.theme = theme
+        self.setCheckable(True)
+        self.setObjectName(theme.action_name)
+        self.triggered['bool'].connect(lambda: self.apply()) #lambda x: self.apply() if x else x
 
     def apply(self):
         self.theme.activate()
-        for action in [x for x in self.action.parentWidget().children() if "_theme" in x.objectName()]:
-            action.setChecked(False)
-        self.action.setChecked(True)
-
+        for action in [x for x in self.parentWidget().children() if "_theme" in x.objectName()]:
+            self.setChecked(False)
+        self.setChecked(True)
 
 class MainWindow(QMainWindow, object):
     def __init__(self, themes: dict):
@@ -77,8 +70,8 @@ class MainWindow(QMainWindow, object):
         self.pages = Pages()
         self.themes = themes
         for theme in self.themes.values():
-            temp_action = ThemeAction(theme, self, theme.display)
-            self.menuTheme.addAction(temp_action.action)
+            self.menuTheme.addAction(QThemeAction(theme, self))
+        self.findChild(QThemeAction, "dark_purple_theme").apply()
         self.setCentralWidget(self.pages.list[0])
         self.centralWidget().commandLinkButton_next.clicked.connect(lambda: self.themes["dark-purple"].activate())
 
