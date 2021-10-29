@@ -2,9 +2,8 @@
 in the main OptiCORD application.
 """
 from PyQt5.QtCore import QFile, QTextStream
-from PyQt5.QtWidgets import QAction, QApplication
+from PyQt5.QtWidgets import QApplication
 from dataclasses import dataclass, field
-from typing import List
 
 @dataclass
 class Theme:
@@ -45,18 +44,3 @@ class ThemeRegistry:
         """Defines how to iterate over ThemeRegistry"""
         for theme in self.themes:
             yield theme
-
-class QThemeAction(QAction):
-    """A QAction Object for Theme items"""
-    def __init__(self, theme: Theme, parent=None):
-        QAction.__init__(self, text=theme.display, parent=parent)
-        self.theme = theme
-        self.setCheckable(True)
-        self.setObjectName(theme.action_name)
-        self.triggered['bool'].connect(self.apply)
-
-    def apply(self):
-        """Apply the associated theme to its main window"""
-        self.theme.apply()
-        [x.setChecked(False) for x in self.parentWidget().findChildren(QThemeAction)]
-        self.setChecked(True)
