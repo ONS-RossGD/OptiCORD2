@@ -36,10 +36,10 @@ class ThemeRegistry:
         self.themes.append(Theme("light", "light_blue_theme", "Light (Blue)"))
         self.themes.append(Theme("light-green", "light_green_theme", "Light (Green)"))
         self.themes.append(Theme("light-purple", "light_purple_theme", "Light (Purple)"))
-    
-    def __call__(self) -> List[Theme]:
-        """Return a list of Theme's if ThemeRegistry is called"""
-        return self.themes
+
+    def __getitem__(self, i: int) -> Theme:
+        """Return a specific Theme if ThemeRegistry()[i] is called"""
+        return self.themes[i]
 
     def __iter__(self) -> Theme:
         """Defines how to iterate over ThemeRegistry"""
