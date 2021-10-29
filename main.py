@@ -19,13 +19,7 @@ class MainWindow(QMainWindow, object):
         
         # temporarily apply dark purple theme while QSettings is set up
         self.findChild(QThemeAction, "dark_purple_theme").apply()
-        self.setCentralWidget(self.pages[0]()) # set page to first page
-
-    def next_page(self):
-        self.setCentralWidget(self.pages.next())
-
-    def prev_page(self):
-        self.setCentralWidget(self.pages.prev())
+        self.setCentralWidget(self.pages[1]()) # set page to first page
 
 def main():
     """Main loop"""
