@@ -2,8 +2,10 @@
 from typing import List
 from PyQt5.QtCore import QObject
 from PyQt5.uic import loadUi
-from PyQt5.QtWidgets import QWidget
+from PyQt5.QtWidgets import QFrame, QWidget
 from dataclasses import dataclass, field
+
+from opticord_widgets import QNavWidget
 
 @dataclass
 class Page:
@@ -47,9 +49,9 @@ class PageRegistry:
         """Define and add Page's here"""
         self.active_page = 0
         #self.pages.append(Page("test.ui", {})) #"commandLinkButton_next": (QPushButton, QNavButton),"commandLinkButton_prev": (QPushButton, QNavButton)
-        self.pages.append(Page("load.ui", {}))
-        self.pages.append(Page("options.ui", {}))
-        self.pages.append(Page("execute.ui", {}))
+        self.pages.append(Page("load.ui", {"frame_nav": (QFrame, QNavWidget)}))
+        self.pages.append(Page("options.ui", {"frame_nav": (QFrame, QNavWidget)}))
+        self.pages.append(Page("execute.ui", {"frame_nav": (QFrame, QNavWidget)}))
 
     def __getitem__(self, i: int) -> Page:
         """Return a specific Page if PageRegistry()[i] is called"""
@@ -63,13 +65,13 @@ class PageRegistry:
     def next(self):
         """Returns the next page as QWidget"""
         if self.active_page == len(self.pages):
-            return self.pages[self.active_page]
+            return self.pages[self.active_page]()
         self.active_page += 1
         return self.pages[self.active_page]()
 
     def prev(self):
         """Returns the previous page as QWidget"""
         if self.active_page == 0:
-            return self.pages[self.active_page]
+            return self.pages[self.active_page]()
         self.active_page -= 1
         return self.pages[self.active_page]()
