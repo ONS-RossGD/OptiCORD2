@@ -1,9 +1,10 @@
 import sys
 import BreezeStyleSheets.breeze_resources # looks redundant but is used to activate stylesheets
 from PyQt5.uic import loadUi
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget
-from themes import ThemeRegistry, QThemeAction
-from pages import Pages
+from PyQt5.QtWidgets import QApplication, QMainWindow
+from themes import ThemeRegistry
+from opticord_widgets import QThemeAction
+from pages import PageRegistry
 
 class MainWindow(QMainWindow, object):
     """Main window of application"""
@@ -11,24 +12,20 @@ class MainWindow(QMainWindow, object):
         super(MainWindow, self).__init__()
         loadUi("main.ui", self)
         self.app = QApplication.instance()
-        self.pages = Pages()
+        self.pages = PageRegistry()
         self.themes = ThemeRegistry()
         for theme in self.themes:
             self.menuTheme.addAction(QThemeAction(theme, self))
         
         # temporarily apply dark purple theme while QSettings is set up
         self.findChild(QThemeAction, "dark_purple_theme").apply()
-        self.setCentralWidget(self.pages.list[0])
-        self.centralWidget().commandLinkButton_next.clicked.connect(self.next_page)
-
-    def set_active_page(self, page: QWidget):
-        self.setCentralWidget(page)
+        self.setCentralWidget(self.pages[0]()) # set page to first page
 
     def next_page(self):
-        self.setCentralWidget(self.pages.next(self.centralWidget()))
+        self.setCentralWidget(self.pages.next())
 
     def prev_page(self):
-        self.setCentralWidget(self.pages.prev(self.centralWidget()))
+        self.setCentralWidget(self.pages.prev())
 
 def main():
     """Main loop"""
