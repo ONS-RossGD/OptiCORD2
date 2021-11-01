@@ -1,3 +1,8 @@
+"""OptiCORD - An Optimisation tool for CORD users.
+"""
+
+__version__ = '2.0.0'
+
 import sys
 import BreezeStyleSheets.breeze_resources # looks redundant but is used to activate stylesheets
 from PyQt5.uic import loadUi
