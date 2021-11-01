@@ -47,17 +47,17 @@ class QNavWidget(QFrame):
         self.run_button.setSizePolicy(self.button_size)
         self.h_layout.addWidget(self.run_button)
 
-        self.signals() # set up signals
+        self._signals() # set up signals
         self._assign_buttons() # assign which buttons appear
-        self.retranslateUi() # give ui text
+        self._retranslateUi() # give ui text
         
-    def signals(self):
+    def _signals(self):
         """Set up the signals for the nav bar"""
         self.back_button.clicked.connect(self.back)
         self.next_button.clicked.connect(self.next)
         self.run_button.clicked.connect(self.run)
 
-    def retranslateUi(self):
+    def _retranslateUi(self):
         """Give buttons translatable text"""
         _translate = QtCore.QCoreApplication.translate
         self.run_button.setText(_translate("nav_bar", "Run"))
@@ -100,7 +100,6 @@ class QNavWidget(QFrame):
     def run(self):
         """TODO"""
         self._assign_buttons()
-        #[x.hide() for x in [self.back, self.next, self.run]]
 
 class QThemeAction(QAction):
     """A QAction Object for Theme items"""
