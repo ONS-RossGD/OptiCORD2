@@ -67,7 +67,7 @@
        <number>10</number>
       </property>
       <item row="0" column="0">
-       <widget class="QGroupBox" name="groupBox_load_pre">
+       <widget class="QGroupBox" name="upload_pre">
         <property name="acceptDrops">
          <bool>false</bool>
         </property>
@@ -78,7 +78,7 @@
        </widget>
       </item>
       <item row="1" column="0">
-       <widget class="QGroupBox" name="groupBox_load_post">
+       <widget class="QGroupBox" name="upload_post">
         <property name="acceptDrops">
          <bool>false</bool>
         </property>
