@@ -4,8 +4,6 @@ from PyQt5.uic import loadUi
 from PyQt5.QtWidgets import QSizePolicy, QStackedWidget, QWidget
 from dataclasses import dataclass, field
 
-from opticord_widgets import QNavWidget
-
 @dataclass
 class Page:
     ui_path: str
@@ -51,7 +49,7 @@ class Pages(QStackedWidget):
         QStackedWidget.__init__(self)
         self.setObjectName("stack")
         #self.pages.append(Page("test.ui", {})) #"commandLinkButton_next": (QPushButton, QNavButton),"commandLinkButton_prev": (QPushButton, QNavButton)
-        self.pages.append(Page("load.ui", self, {})) #"frame_nav": (QFrame, QNavWidget)
+        self.pages.append(Page("load.ui", self, {}))
         self.pages.append(Page("options.ui", self, {}))
         self.pages.append(Page("execute.ui", self, {}))
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
