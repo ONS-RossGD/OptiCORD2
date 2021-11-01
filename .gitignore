@@ -2,5 +2,7 @@ __pycache__
 .vscode
 .qt_for_python
 venv
+logs
+
 test.py
 test.ui

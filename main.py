@@ -10,16 +10,23 @@ from PyQt5.QtWidgets import QApplication, QMainWindow
 from themes import ThemeRegistry
 from opticord_widgets import QNavWidget, QThemeAction
 from pages import Pages
+import opticord_logging
 
 class MainWindow(QMainWindow, object):
     """Main window of application"""
+    logger = opticord_logging.get_log('MainWindow')
     def __init__(self):
         super(MainWindow, self).__init__()
+        self.logger.debug('loading main.ui')
         loadUi("main.ui", self)
         self.app = QApplication.instance()
+        self.logger.debug('creating theme registry')
         self.themes = ThemeRegistry()
+        self.logger.debug('setting up pages')
         self.pages = Pages()
+        self.logger.debug('adding navigation bar')
         self.nav = QNavWidget(self, self.pages)
+        self.logger.debug('filling themes')
         for theme in self.themes:
             self.menuTheme.addAction(QThemeAction(theme, self))
 
