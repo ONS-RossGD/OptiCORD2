@@ -20,6 +20,7 @@ class MainWindow(QMainWindow, object):
 
         # temporarily apply dark purple theme while QSettings is set up
         self.findChild(QThemeAction, "dark_purple_theme").apply()
+        # add pages widget and nav bar to the layout
         self.main_grid.addWidget(self.pages, 1, 0, 1, 1)
         self.main_grid.addWidget(self.nav, 2, 0, 1, 1)
 
