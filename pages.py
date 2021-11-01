@@ -46,7 +46,8 @@ class Pages(QStackedWidget):
     pages = []
     
     def __init__(self):
-        """Define and add Page's here"""
+        """Define and add Page's here. Pages should be Qt Designer made 
+        widgets saved as <page>.ui"""
         QStackedWidget.__init__(self)
         self.setObjectName("stack") # note: this widget's name cannot be changed
         #self.pages.append(Page("test.ui", {})) #"commandLinkButton_next": (QPushButton, QNavButton),"commandLinkButton_prev": (QPushButton, QNavButton)
