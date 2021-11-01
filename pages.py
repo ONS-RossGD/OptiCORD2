@@ -1,8 +1,14 @@
 
 from PyQt5.QtCore import QObject
 from PyQt5.uic import loadUi
-from PyQt5.QtWidgets import QSizePolicy, QStackedWidget, QWidget
+from PyQt5.QtWidgets import QGroupBox, QSizePolicy, QStackedWidget, QWidget
 from dataclasses import dataclass, field
+
+from opticord_widgets import QDropBox
+
+class WidgetNotFound(Exception):
+    def __init__(self):
+        """"""
 
 @dataclass
 class Page:
@@ -18,7 +24,12 @@ class Page:
         self.stack.addWidget(self.page)
         for obj_name in self.replacements.keys():
             (old, new) = self.replacements[obj_name]
-            self.replace_widget_type(obj_name, old, new)
+            try:
+                self.replace_widget_type(obj_name, old, new)
+            except WidgetNotFound as e:
+                # TODO logging error
+                print(f'Unable to find the widget "{obj_name}"" in "{self.ui_path}"')
+                raise
     
     def __call__(self) -> QWidget:
         """Return the Page as QWidget when Page() is called"""
@@ -31,10 +42,13 @@ class Page:
             old_type: The old type of QObject.
             new_type: The new type of QObject."""
         old = self.page.findChild(old_type, obj_name) # find the old widget
+        if old is None:
+            raise WidgetNotFound
         parent = old.parentWidget() # store its parent
         layout = parent.layout() # get the parent layout
         new = new_type(parent) # create a new widget with the same parent
         new.setObjectName(old.objectName()) # set the new widgets object name to replace the old
+        new.setTitle(old.title()) # set the new title to the old
         layout.replaceWidget(old, new) # replace the old widget with the new in the layout
         old.deleteLater() # delete the old widget
         old = None
@@ -49,7 +63,7 @@ class Pages(QStackedWidget):
         QStackedWidget.__init__(self)
         self.setObjectName("stack")
         #self.pages.append(Page("test.ui", {})) #"commandLinkButton_next": (QPushButton, QNavButton),"commandLinkButton_prev": (QPushButton, QNavButton)
-        self.pages.append(Page("load.ui", self, {}))
+        self.pages.append(Page("load.ui", self, {"upload_pre": (QGroupBox, QDropBox),"upload_post": (QGroupBox, QDropBox)}))
         self.pages.append(Page("options.ui", self, {}))
         self.pages.append(Page("execute.ui", self, {}))
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
