@@ -1,8 +1,94 @@
 
+from typing import List
 from PyQt5 import QtCore
-from PyQt5.QtCore import QObject, QSize
-from PyQt5.QtWidgets import QAction, QFrame, QHBoxLayout, QPushButton, QSizePolicy, QSpacerItem, QStackedWidget, QWidget
+from PyQt5.QtCore import QObject, QSize, Qt
+from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent
+from PyQt5.QtWidgets import QAction, QFrame, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QPushButton, QSizePolicy, QSpacerItem, QStackedWidget, QTreeView, QWidget
 from themes import Theme
+
+class QDropBox(QGroupBox):
+    urls: List[str]
+
+    def __init__(self, parent: QWidget):
+        QGroupBox.__init__(self, parent)
+        self.obj_name = self.objectName()
+        self.setAcceptDrops(True)
+        # set up ui
+        self.main_grid = QGridLayout(self)
+        self.main_grid.setObjectName(self.obj_name + "_main_grid")
+        self.drag_drop_frame = QFrame(self)
+        self.drag_drop_frame.setObjectName(self.obj_name + "_drag_drop_frame")
+        self.drag_drop_grid = QGridLayout(self.drag_drop_frame)
+        self.drag_drop_label = QLabel(self)
+        sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.drag_drop_label.sizePolicy().hasHeightForWidth())
+        self.drag_drop_label.setSizePolicy(sizePolicy)
+        self.drag_drop_label.setMinimumSize(QtCore.QSize(200, 50))
+        self.drag_drop_label.setAlignment(QtCore.Qt.AlignCenter)
+        self.drag_drop_label.setObjectName(self.obj_name + "_drag_drop_label")
+        self.drag_drop_grid.addWidget(self.drag_drop_label, 1, 0, 1, 1)
+        spacerItem = QSpacerItem(20, 80, QSizePolicy.Minimum, QSizePolicy.MinimumExpanding)
+        self.drag_drop_grid.addItem(spacerItem, 3, 0, 1, 1)
+        self.browse_button = QPushButton(self)
+        sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.browse_button.sizePolicy().hasHeightForWidth())
+        self.browse_button.setSizePolicy(sizePolicy)
+        self.browse_button.setMinimumSize(QtCore.QSize(200, 50))
+        self.browse_button.setObjectName(self.obj_name + "_browse_button")
+        self.drag_drop_grid.addWidget(self.browse_button, 2, 0, 1, 1)
+        spacerItem1 = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.MinimumExpanding)
+        self.drag_drop_grid.addItem(spacerItem1, 0, 0, 1, 1)
+        self.main_grid.addWidget(self.drag_drop_frame)
+        self.tree = QTreeView(self)
+        self.main_grid.addWidget(self.tree)
+        self.tree.hide()
+        self.browse_button.clicked.connect(self.test)
+        self._retranslateUi() # give ui translatable text
+
+    def test(self):
+        self.drag_drop_frame.hide()
+        self.tree.show()
+
+    def _retranslateUi(self):
+        """Give buttons translatable text"""
+        _translate = QtCore.QCoreApplication.translate
+        self.drag_drop_label.setText(_translate(self.obj_name, "Drag & Drop files/folders here\n\nor"))
+        self.browse_button.setText(_translate(self.obj_name, "Browse"))
+
+    def dragEnterEvent(self, event: QDragEnterEvent):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event: QDragMoveEvent):
+        if event.mimeData().hasUrls():
+            event.setDropAction(Qt.CopyAction)
+            event.accept()
+        else:
+            event.ignore()
+    
+    def dropEvent(self, event: QDropEvent):
+        if event.mimeData().hasUrls():
+            event.setDropAction(Qt.CopyAction)
+            event.accept()
+
+            links = []
+
+            for url in event.mimeData().urls():
+                if url.isLocalFile():
+                    links.append(str(url.toLocalFile()))
+                else:
+                    # TODO log error, maybe signal popup
+                    print(f'url: {url} is not a local file...')
+            
+            self.urls = links
+
+            print(self.urls)
 
 class QNavWidget(QFrame):
     """A QFrame to hold the navigation items"""
@@ -49,7 +135,7 @@ class QNavWidget(QFrame):
 
         self._signals() # set up signals
         self._assign_buttons() # assign which buttons appear
-        self._retranslateUi() # give ui text
+        self._retranslateUi() # give ui translatable text
         
     def _signals(self):
         """Set up the signals for the nav bar"""
