@@ -1,8 +1,7 @@
 
-from typing import List
 from PyQt5.QtCore import QObject
 from PyQt5.uic import loadUi
-from PyQt5.QtWidgets import QFrame, QWidget
+from PyQt5.QtWidgets import QSizePolicy, QStackedWidget, QWidget
 from dataclasses import dataclass, field
 
 from opticord_widgets import QNavWidget
@@ -10,6 +9,7 @@ from opticord_widgets import QNavWidget
 @dataclass
 class Page:
     ui_path: str
+    stack: QStackedWidget
     replacements: dict
     page: QWidget = field(init=False)
 
@@ -17,6 +17,7 @@ class Page:
         """Create the page variable after initalisation so we
         use of dataclass init"""
         self.page = loadUi(self.ui_path)
+        self.stack.addWidget(self.page)
         for obj_name in self.replacements.keys():
             (old, new) = self.replacements[obj_name]
             self.replace_widget_type(obj_name, old, new)
@@ -40,38 +41,20 @@ class Page:
         old.deleteLater() # delete the old widget
         old = None
 
-class PageRegistry:
-    """A Registry for all available Page's"""
+class Pages(QStackedWidget):
+    """A QStackedWidget containing all Page's"""
     pages = []
-    active_page: int
     
     def __init__(self):
         """Define and add Page's here"""
-        self.active_page = 0
+        QStackedWidget.__init__(self)
+        self.setObjectName("stack") # note: this widget's name cannot be changed
         #self.pages.append(Page("test.ui", {})) #"commandLinkButton_next": (QPushButton, QNavButton),"commandLinkButton_prev": (QPushButton, QNavButton)
-        self.pages.append(Page("load.ui", {"frame_nav": (QFrame, QNavWidget)}))
-        self.pages.append(Page("options.ui", {"frame_nav": (QFrame, QNavWidget)}))
-        self.pages.append(Page("execute.ui", {"frame_nav": (QFrame, QNavWidget)}))
-
-    def __getitem__(self, i: int) -> Page:
-        """Return a specific Page if PageRegistry()[i] is called"""
-        return self.pages[i]
-
-    def __iter__(self) -> Page:
-        """Defines how to iterate over PageRegistry"""
-        for page in self.pages:
-            yield page
-
-    def next(self):
-        """Returns the next page as QWidget"""
-        if self.active_page == len(self.pages):
-            return self.pages[self.active_page]()
-        self.active_page += 1
-        return self.pages[self.active_page]()
-
-    def prev(self):
-        """Returns the previous page as QWidget"""
-        if self.active_page == 0:
-            return self.pages[self.active_page]()
-        self.active_page -= 1
-        return self.pages[self.active_page]()
+        self.pages.append(Page("load.ui", self, {})) #"frame_nav": (QFrame, QNavWidget)
+        self.pages.append(Page("options.ui", self, {}))
+        self.pages.append(Page("execute.ui", self, {}))
+        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(9)
+        sizePolicy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
+        self.setSizePolicy(sizePolicy)

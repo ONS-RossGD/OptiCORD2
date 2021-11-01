@@ -1,15 +1,23 @@
 
+from PyQt5 import QtCore
 from PyQt5.QtCore import QObject, QSize
-from PyQt5.QtWidgets import QAction, QFrame, QHBoxLayout, QMainWindow, QPushButton, QSizePolicy, QSpacerItem, QWidget
+from PyQt5.QtWidgets import QAction, QFrame, QHBoxLayout, QPushButton, QSizePolicy, QSpacerItem, QStackedWidget, QWidget
 from themes import Theme
 
 class QNavWidget(QFrame):
     """A QFrame to hold the navigation items"""
-    nav_buttons = ["run", "next", "prev"]
+    stack: QStackedWidget
 
-    def __init__(self, parent: QWidget):#, nav_buttons: List[str]
+    def __init__(self, parent: QWidget, stack: QStackedWidget):#, nav_buttons: List[str]
         QFrame.__init__(self, parent)
-        self.frame_name = parent.objectName()+"_navbar"
+        self.stack = stack # store the QStackWidget for later reference
+        # set up ui
+        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(1)
+        sizePolicy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
+        self.setSizePolicy(sizePolicy)
+        self.frame_name = "nav_bar"
         self.frame_size = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         self.frame_size.setHorizontalStretch(0)
         self.frame_size.setVerticalStretch(1)
@@ -39,24 +47,59 @@ class QNavWidget(QFrame):
         self.run_button.setSizePolicy(self.button_size)
         self.h_layout.addWidget(self.run_button)
 
+        self.signals() # set up signals
+        self._assign_buttons() # assign which buttons appear
+        self.retranslateUi() # give ui text
+        
+    def signals(self):
+        """Set up the signals for the nav bar"""
         self.back_button.clicked.connect(self.back)
         self.next_button.clicked.connect(self.next)
         self.run_button.clicked.connect(self.run)
 
-        #print(self.nativeParentWidget().objectName())
+    def retranslateUi(self):
+        """Give buttons translatable text"""
+        _translate = QtCore.QCoreApplication.translate
+        self.run_button.setText(_translate("nav_bar", "Run"))
+        self.next_button.setText(_translate("nav_bar", "Next"))
+        self.back_button.setText(_translate("nav_bar", "Back"))
+
+    def _assign_buttons(self):
+        """Assign which buttons appear on the nav bar based on the 
+        current index of the stack widget. The first page will have
+        only a next button, and the last page will have run instead
+        of next. All other pages contain back and next."""
+        self.back_button.hide()
+        self.next_button.hide()
+        self.run_button.hide()
+        idx = self.stack.currentIndex()
+        count = self.stack.count()-1 # -1 to match index
+        if idx == count: # last page
+            self.back_button.show()
+            self.run_button.show()
+        elif idx == 0: # first page
+            self.next_button.show()
+        else: # all other pages
+            self.back_button.show()
+            self.next_button.show()
 
     def next(self):
-        """Go to next page"""
-        mainwindow = self.nativeParentWidget()
-        mainwindow.setCentralWidget(mainwindow.pages.next())
+        """Changes the index of the stack by +1 if valid"""
+        idx = self.stack.currentIndex()
+        if idx < self.stack.count():
+            self.stack.setCurrentIndex(idx+1)
+            self._assign_buttons()
 
     def back(self):
-        """Go back a page"""
-        mainwindow = self.nativeParentWidget()
-        mainwindow.setCentralWidget(mainwindow.pages.prev())
+        """Changes the index of the stack by -1 if valid"""
+        idx = self.stack.currentIndex()
+        if idx > 0:
+            self.stack.setCurrentIndex(idx-1)
+            self._assign_buttons()
 
     def run(self):
         """TODO"""
+        self._assign_buttons()
         #[x.hide() for x in [self.back, self.next, self.run]]
 
 class QThemeAction(QAction):
