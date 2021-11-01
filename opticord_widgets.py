@@ -86,7 +86,7 @@ class QNavWidget(QFrame):
     def next(self):
         """Changes the index of the stack by +1 if valid"""
         idx = self.stack.currentIndex()
-        if idx < self.stack.count():
+        if idx < self.stack.count()-1: # -1 because count starts from 1 not 0
             self.stack.setCurrentIndex(idx+1)
             self._assign_buttons()
 
