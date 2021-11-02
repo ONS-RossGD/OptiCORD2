@@ -23,7 +23,7 @@ class MainWindow(QMainWindow, object):
         self.logger.debug('creating theme registry')
         self.themes = ThemeRegistry()
         self.logger.debug('setting up pages')
-        self.pages = Pages()
+        self.pages = Pages(self)
         self.logger.debug('adding navigation bar')
         self.nav = QNavWidget(self, self.pages)
         self.logger.debug('filling themes')

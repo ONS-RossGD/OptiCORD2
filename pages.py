@@ -57,12 +57,12 @@ class Pages(QStackedWidget):
     """A QStackedWidget containing all Page's"""
     pages = []
     
-    def __init__(self):
+    def __init__(self, parent: QWidget):
         """Define and add Page's here. Pages should be Qt Designer made 
         widgets saved as <page>.ui"""
-        QStackedWidget.__init__(self)
+        QStackedWidget.__init__(self, parent)
         self.setObjectName("stack")
-        #self.pages.append(Page("test.ui", {})) #"commandLinkButton_next": (QPushButton, QNavButton),"commandLinkButton_prev": (QPushButton, QNavButton)
+        #self.pages.append(Page("test.ui", self, {}))
         self.pages.append(Page("load.ui", self, {"upload_pre": (QGroupBox, QDropBox),"upload_post": (QGroupBox, QDropBox)}))
         self.pages.append(Page("options.ui", self, {}))
         self.pages.append(Page("execute.ui", self, {}))
