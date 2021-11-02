@@ -192,12 +192,16 @@ class QThemeAction(QAction):
     def __init__(self, theme: Theme, parent: QObject):
         QAction.__init__(self, text=theme.display, parent=parent)
         self.theme = theme
+        self.settings = QSettings()
         self.setCheckable(True)
         self.setObjectName(theme.action_name)
         self.triggered['bool'].connect(self.apply)
+        if self.settings.value("active_theme") == self.theme:
+            self.setChecked(True)
 
     def apply(self):
         """Apply the associated theme to its main window"""
         self.theme.apply()
+        self.settings.setValue("active_theme", self.theme)
         [x.setChecked(False) for x in self.parentWidget().findChildren(QThemeAction)]
         self.setChecked(True)
