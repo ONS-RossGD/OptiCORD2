@@ -46,8 +46,7 @@ class Page:
             raise WidgetNotFound
         parent = old.parentWidget() # store its parent
         layout = parent.layout() # get the parent layout
-        new = new_type(parent) # create a new widget with the same parent
-        new.setObjectName(old.objectName()) # set the new widgets object name to replace the old
+        new = new_type(parent, old.objectName()) # create a new widget with the same parent#
         new.setTitle(old.title()) # set the new title to the old
         layout.replaceWidget(old, new) # replace the old widget with the new in the layout
         old.deleteLater() # delete the old widget
