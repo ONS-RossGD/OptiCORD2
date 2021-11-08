@@ -42,7 +42,7 @@ class QLoadTree(QTreeView):
         files = [x for x in files if x not in self.received]
         for file in files:
             self.received.append(file) # add to received
-            self.visualisations.read(file)
+            self.visualisations.open(file)
             self.queued_items.appendRow(self.uneditable_item(os.path.basename(file)))
 
 
