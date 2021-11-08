@@ -72,12 +72,13 @@ class Visualisation:
                 markers.append((d, criteria[i+1]))
         return markers
 
-    def retrieve_dates(self, prelim_df: pd.DataFrame, markers: List[tuple]) -> List[str]:
+    def retrieve_dates(self, prelim_df: pd.DataFrame,
+        markers: List[tuple]) -> List[List[str]]:
         """Process rows from prelim_df that contain dates into
         a list of lists containing only the date values.
         Requires:
             prelim_df: the preliminary dataframe
-            markers: index markers where dates can be found
+            markers: list of slice markers
         Returns:
             master_list: List of lists containing the dates"""
         master_list = []
@@ -91,6 +92,28 @@ class Visualisation:
             dates = list(filter(lambda date: date != '', dates))
             master_list.append(dates) # add to master list
         return master_list
+
+    def retrieve_dimensions(self, prelim_df: pd.DataFrame,
+        markers: List[tuple]) -> List[str]:
+        """Read rows from prelim_df that contain the dimension headers 
+        and return a list of dimensions.
+        Requires:
+            prelim_df: the preliminary dataframe
+            markers: list of slice markers
+        Returns:
+            dimensions: List of dimensions"""
+        # retrieve the lines containing dates using markers
+        for x, _ in markers[1:]:
+            # strip trailing commas then split by commas
+            dimensions = prelim_df.loc[x,0].rstrip(',').split(',')
+            # remove any quotations
+            dimensions = [dim.replace('"', '') for dim in dimensions]
+            # filter out any empty items
+            dimensions = list(filter(lambda dim: dim != '', dimensions))
+            # remove the Date
+            dimensions.remove('Date')
+            print(dimensions)
+        return dimensions
 
     def prelim_read(self, filepath: str) -> dict:
         """Preliminarily read the csv file as a much smaller dataframe
@@ -111,6 +134,7 @@ class Visualisation:
         info['markers'] = self.retrieve_markers(prelim_df)
         # get the dates for each slice as a list
         info['dates'] = self.retrieve_dates(prelim_df, info['markers'])
+        info['dimensions'] = self.retrieve_dimensions(prelim_df, info['markers'])
         del prelim_df # clear the prelim df from memory
         # get the periodicities in the order they appear
         info['periodicities'] = self.determine_periodicity(filepath, info)
