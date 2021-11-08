@@ -10,7 +10,7 @@ from themes import Theme
 
 class QLoadTree(QTreeView):
     """"""
-    data = DataRegistry()
+    visualisations = DataRegistry()
 
     def uneditable_item(self, text):
         item = QStandardItem()
@@ -20,7 +20,7 @@ class QLoadTree(QTreeView):
 
     def __init__(self, parent: QWidget):
         """"""
-        QTreeView.__init__(self, parent)
+        super(QTreeView, self).__init__(parent)
         self.received = [] # start list of received files
         self.obj_name = self.parent().objectName()+"_tree"
         self.setObjectName(self.obj_name)
@@ -42,7 +42,7 @@ class QLoadTree(QTreeView):
         files = [x for x in files if x not in self.received]
         for file in files:
             self.received.append(file) # add to received
-            self.data.open(file)
+            self.visualisations.read(file)
             self.queued_items.appendRow(self.uneditable_item(os.path.basename(file)))
 
 
@@ -51,7 +51,7 @@ class QDropBox(QGroupBox):
     urls = []
 
     def __init__(self, parent: QWidget, obj_name: str):
-        QGroupBox.__init__(self, parent)
+        super(QGroupBox, self).__init__(parent)
         self.obj_name = obj_name # store object name for reference
         self.setObjectName(obj_name) # set object name to one it's replacing
         self.setAcceptDrops(True)
@@ -142,7 +142,7 @@ class QNavWidget(QFrame):
     stack: QStackedWidget
 
     def __init__(self, parent: QWidget, stack: QStackedWidget):#, nav_buttons: List[str]
-        QFrame.__init__(self, parent)
+        super(QFrame, self).__init__(parent)
         self.stack = stack # store the QStackWidget for later reference
         # set up ui
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
@@ -237,7 +237,7 @@ class QNavWidget(QFrame):
 class QThemeAction(QAction):
     """A QAction Object for Theme items"""
     def __init__(self, theme: Theme, parent: QObject):
-        QAction.__init__(self, text=theme.display, parent=parent)
+        super(QAction, self).__init__(text=theme.display, parent=parent)
         self.theme = theme
         self.settings = QSettings()
         self.setCheckable(True)
