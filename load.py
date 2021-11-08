@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 import os
-from typing import List
+from typing import List, Tuple
 import numpy as np
 import pandas as pd
 import validation
@@ -35,7 +35,7 @@ class Visualisation:
         """Determines the periodicity of a marked row of dates.
         Requires;
             filepath: filepath of csv to be read
-            info: info dict containing markers and columns
+            info: info dict containing markers
         Returns;
             periods: list of periodicities in file in order they appear"""
         periods = []
@@ -72,6 +72,25 @@ class Visualisation:
                 markers.append((d, criteria[i+1]))
         return markers
 
+    def retrieve_dates(self, prelim_df: pd.DataFrame, markers: List[tuple]) -> List[str]:
+        """Process rows from prelim_df that contain dates into
+        a list of lists containing only the date values.
+        Requires:
+            prelim_df: the preliminary dataframe
+            markers: index markers where dates can be found
+        Returns:
+            master_list: List of lists containing the dates"""
+        master_list = []
+        # retrieve the lines containing dates using markers
+        for x, _ in markers[1:]:
+            # strip trailing commas then split by commas
+            dates = prelim_df.loc[x+1,0].rstrip(',').split(',')
+            # remove any quotations
+            dates = [date.replace('"', '') for date in dates]
+            # filter out any empty items
+            dates = list(filter(lambda date: date != '', dates))
+            master_list.append(dates) # add to master list
+        return master_list
 
     def prelim_read(self, filepath: str) -> dict:
         """Preliminarily read the csv file as a much smaller dataframe
@@ -90,12 +109,12 @@ class Visualisation:
                 dtype=str, names=[0])
         # gather marker points where dataframe will be sliced
         info['markers'] = self.retrieve_markers(prelim_df)
-        # get the number of columns in each csv section from commas
-        info['columns'] = [prelim_df.loc[x+1, 0].rstrip(',').count(',')\
-            for x, _ in info['markers'][1:]]
+        # get the dates for each slice as a list
+        info['dates'] = self.retrieve_dates(prelim_df, info['markers'])
         del prelim_df # clear the prelim df from memory
         # get the periodicities in the order they appear
         info['periodicities'] = self.determine_periodicity(filepath, info)
+        print(info)
         return info
 
     def read_meta(self, filepath: str, info: dict):
@@ -135,6 +154,13 @@ class Visualisation:
             if item == "Coverage Descriptors": store = True
         meta['Coverage'] = coverage
         return meta
+
+    def read_data_slice(self, filepath: str, start: int,
+        end: int, columns: int) -> pd.DataFrame:
+        """"""
+        df = pd.read_csv(filepath, encoding='unicode_escape', 
+                header=None, nrows=end-start, skip_blank_lines=False,
+                dtype=str)
 
     def read(self, filepath: str):
         """"""
