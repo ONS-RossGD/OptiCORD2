@@ -134,7 +134,7 @@ class Visualisation:
             '.*?Status:(.*?),|.*?Status:(.*?)$', meta_series)
         coverage = dict() # init a dict to be nested
         store = False # store toggle will activate in correct section
-        for r, item in enumerate(meta_series):
+        for item in meta_series:
             if store:
                 # get criteria and value from line
                 criteria, value = item.split(',')
