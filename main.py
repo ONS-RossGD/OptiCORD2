@@ -4,41 +4,24 @@
 __version__ = '2.0.0'
 
 import sys
-
-from PyQt5.QtCore import QSettings
+from PyQt5 import QtCore
+from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QIcon
-import BreezeStyleSheets.breeze_resources # looks redundant but is used to activate stylesheets
-from PyQt5.uic import loadUi
-from PyQt5.QtWidgets import QApplication, QMainWindow
-from themes import ThemeRegistry
-from opticord_widgets import QNavWidget, QThemeAction
-from pages import Pages
-import opticord_logging
+from PyQt5.QtWidgets import QMainWindow
 
 class MainWindow(QMainWindow, object):
     """Main window of application"""
-    logger = opticord_logging.get_log('MainWindow')
     def __init__(self):
         super(MainWindow, self).__init__()
-        # set the icon
-        self.setWindowIcon(QIcon('resources/OptiCORD_icon.png'))
         # set the window title
         self.setWindowTitle(f'OptiCORD v{__version__}')
-        self.settings = QSettings()
-        self.logger.debug('loading main.ui')
-        loadUi("main.ui", self)
-        self.themes = ThemeRegistry()
-        # apply the users selected theme defaulted to dark purple
-        self.settings.value("active_theme", self.themes[2]).apply()
-        self.pages = Pages(self)
-        self.nav = QNavWidget(self, self.pages)
-        # fill the themes menu 
-        for theme in self.themes:
-            self.menuTheme.addAction(QThemeAction(theme, self))
-
-        # add pages widget and nav bar to the layout
-        self.main_grid.addWidget(self.pages, 1, 0, 1, 1)
-        self.main_grid.addWidget(self.nav, 2, 0, 1, 1)
+        # set the icon
+        self.setWindowIcon(QIcon('ui/resources/OptiCORD_icon.png'))
+        
+        self.setObjectName("MainWindow")
+        self.resize(800, 600)
+        self.setMinimumSize(QtCore.QSize(800, 600))
+        self.setAcceptDrops(False)
 
 def main():
     """Main loop"""
