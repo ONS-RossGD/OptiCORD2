@@ -5,23 +5,12 @@ __version__ = '2.0.0'
 
 import sys
 from PyQt5 import QtCore
+from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMainWindow
-
-class MainWindow(QMainWindow, object):
-    """Main window of application"""
-    def __init__(self):
-        super(MainWindow, self).__init__()
-        # set the window title
-        self.setWindowTitle(f'OptiCORD v{__version__}')
-        # set the icon
-        self.setWindowIcon(QIcon('ui/resources/OptiCORD_icon.png'))
-        
-        self.setObjectName("MainWindow")
-        self.resize(800, 600)
-        self.setMinimumSize(QtCore.QSize(800, 600))
-        self.setAcceptDrops(False)
+from PyQt5.QtCore import QCoreApplication
+from ui import mainwindow
 
 def main():
     """Main loop"""
@@ -30,8 +19,12 @@ def main():
     app.setApplicationName("OptiCORD")
     app.setOrganizationName("ONS")
     app.setOrganizationDomain("ons.gov.uk")
-    mainwindow = MainWindow() # creates the main window instance
-    mainwindow.show() # begin showing to user
+    mw = mainwindow.MainWindow() # creates the main window instance
+    # set the icon
+    mw.setWindowIcon(QIcon('./ui/resources/OptiCORD_icon.png'))
+    # set the window title
+    mw.setWindowTitle(f'OptiCORD v{__version__}')
+    mw.show() # begin showing to user
     try:
         sys.exit(app.exec_())
     except: # TODO catch correct Exception.
