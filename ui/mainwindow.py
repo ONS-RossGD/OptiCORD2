@@ -1,11 +1,11 @@
 
 
+from PyQt5 import QtCore, QtGui
+from PyQt5 import QtWidgets
 from PyQt5.QtCore import QObject, QSettings
-from PyQt5.QtWidgets import QAction, QMainWindow
+from PyQt5.QtWidgets import QAction, QFrame, QLabel, QMainWindow, QVBoxLayout
 from PyQt5.uic import loadUi
 from themes import ThemeRegistry, Theme
-# below looks redundant but is used to activate stylesheets
-import BreezeStyleSheets.breeze_resources
 
 class QThemeAction(QAction):
     """A QAction Object for Theme items"""
@@ -22,8 +22,8 @@ class QThemeAction(QAction):
     def apply(self):
         """Apply the associated theme to its main window"""
         self.theme.apply()
-        self.settings.setValue("active_theme", self.theme)
-        [x.setChecked(False) for x in self.parentWidget().findChildren(QThemeAction)]
+        [x.setChecked(False) for x in self.parentWidget()\
+            .findChildren(QThemeAction)]
         self.setChecked(True)
 
 class MainWindow(QMainWindow, object):
@@ -33,7 +33,7 @@ class MainWindow(QMainWindow, object):
         self.settings = QSettings()
         #self.logger.debug('loading main.ui')
         loadUi("./ui/mainwindow.ui", self)
-        self.themes = ThemeRegistry()
+        self.themes = ThemeRegistry() # load all themes
         # apply the users selected theme defaulted to dark purple
         self.settings.value("active_theme", self.themes[2]).apply()
         #self.pages = Pages(self)

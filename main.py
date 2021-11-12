@@ -1,16 +1,13 @@
-"""OptiCORD - An Optimisation tool for CORD users.
+"""OptiCORD - An Optimisation tool for CORD users.\
 """
 
 __version__ = '2.0.0'
 
 import sys
-from PyQt5 import QtCore
-from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QMainWindow
-from PyQt5.QtCore import QCoreApplication
-from ui import mainwindow
+from ui import mainwindow, welcome
+from ui.resources import resource_init # looks redundant but isn't
 
 def main():
     """Main loop"""
@@ -24,6 +21,7 @@ def main():
     mw.setWindowIcon(QIcon('./ui/resources/OptiCORD_icon.png'))
     # set the window title
     mw.setWindowTitle(f'OptiCORD v{__version__}')
+    mw.setCentralWidget(welcome.WelcomePage(mw))
     mw.show() # begin showing to user
     try:
         sys.exit(app.exec_())
