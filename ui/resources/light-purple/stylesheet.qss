@@ -1956,5 +1956,9 @@ QLabel#open_group_image{
 }
 
 QGroupBox[hovering="true"]{
-    border: 0.08em solid rgba(164, 51, 223, 0.5);
+    border: 0.04em solid rgba(164, 51, 223, 0.5);
+}
+
+*[invalid_input="true"]{
+    border: 0.04em solid #b33e3e;
 }

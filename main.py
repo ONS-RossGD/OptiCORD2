@@ -4,6 +4,7 @@
 __version__ = '2.0.0'
 
 import sys
+import ctypes
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QIcon
 from ui import mainwindow, welcome
@@ -16,6 +17,9 @@ def main():
     app.setApplicationName("OptiCORD")
     app.setOrganizationName("ONS")
     app.setOrganizationDomain("ons.gov.uk")
+    # TODO python hack to set task bar icon, may not be needed in exe
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+        f'ONS.OptiCORD.{__version__}')
     mw = mainwindow.MainWindow() # creates the main window instance
     # set the icon
     mw.setWindowIcon(QIcon('./ui/resources/OptiCORD_icon.png'))
