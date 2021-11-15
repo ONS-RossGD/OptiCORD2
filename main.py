@@ -1,4 +1,4 @@
-"""OptiCORD - An Optimisation tool for CORD users.\
+"""OptiCORD - An Optimisation tool for CORD users.
 """
 
 __version__ = '2.0.0'
@@ -21,6 +21,7 @@ def main():
     mw.setWindowIcon(QIcon('./ui/resources/OptiCORD_icon.png'))
     # set the window title
     mw.setWindowTitle(f'OptiCORD v{__version__}')
+    # initially show the welcome page
     mw.setCentralWidget(welcome.WelcomePage(mw))
     mw.show() # begin showing to user
     try:

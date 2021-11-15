@@ -1954,3 +1954,7 @@ QLabel#new_group_image,
 QLabel#open_group_image{
     margin-right: 15px;
 }
+
+QGroupBox[hovering="true"]{
+    border: 0.08em solid #3daee9;
+}

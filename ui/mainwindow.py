@@ -1,9 +1,7 @@
 
 
-from PyQt5 import QtCore, QtGui
-from PyQt5 import QtWidgets
 from PyQt5.QtCore import QObject, QSettings
-from PyQt5.QtWidgets import QAction, QFrame, QLabel, QMainWindow, QVBoxLayout
+from PyQt5.QtWidgets import QAction, QMainWindow
 from PyQt5.uic import loadUi
 from themes import ThemeRegistry, Theme
 

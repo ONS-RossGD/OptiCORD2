@@ -67,7 +67,7 @@
       </font>
      </property>
      <property name="text">
-      <string>To get started, please choose an existing OptiCORD project to open, or create a new one!</string>
+      <string>To get started, please choose an existing OptiCORD change tracker to open, or create a new one!</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
@@ -132,7 +132,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Create a new OptiCORD project...</string>
+         <string>Create a new OptiCORD change tracker...</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -164,7 +164,7 @@
       </sizepolicy>
      </property>
      <property name="title">
-      <string>Open existing project...</string>
+      <string>Open existing...</string>
      </property>
      <layout class="QHBoxLayout" name="open_group_layout">
       <item>
@@ -210,7 +210,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Open an existing .opticord project file...</string>
+         <string>Open an existing OptiCORD change tracker...</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
