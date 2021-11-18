@@ -39,3 +39,5 @@ class MainWindow(QMainWindow, object):
 
         self.action_new.triggered[bool].connect(
             lambda: actions.create_new(self))
+        self.action_open.triggered[bool].connect(
+            lambda: actions.open(self))

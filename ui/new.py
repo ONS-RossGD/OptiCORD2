@@ -2,7 +2,7 @@
 
 from PyQt5.QtCore import QObject, QSettings
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QDialog, QFileDialog, QWidget
+from PyQt5.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox, QWidget
 from PyQt5.uic import loadUi
 import util
 import os
@@ -11,7 +11,6 @@ class NewDialog(QDialog, object):
     """Dialog window for creating a new change tracker file."""
     def __init__(self, parent: QObject):
         super(QDialog, self).__init__(parent, Qt.WindowTitleHint)
-        self.settings = QSettings()
         # load the vanilla elements from QT Designer file
         loadUi("./ui/new.ui", self)
         # add validator to name field to ensure valid filename
@@ -39,14 +38,27 @@ class NewDialog(QDialog, object):
             return QApplication.beep() # makes warning noise
         # create a save dialog window
         self.url = QFileDialog.getExistingDirectory(self,
-            "Choose save location...")
+            "Choose save location...",
+            QSettings().value('last_save_location',''))
         if not self.url: # if filepath is empty
             return QApplication.beep()
+        # if opticord file already exists return a warning
+        if os.path.exists(f'{self.url}\\{self.name_edit.text()}.opticord'):
+            return QMessageBox.warning(
+                self, 'File already exists!',
+                f'A file with the name "{self.name_edit.text()}" already'\
+                ' exists in the directory that you chose. Please choose'\
+                ' another name or location to save your file, or delete'\
+                ' the existing file to start over.'
+            )
+        # update last_save_location
+        QSettings().setValue('last_save_location', self.url)
+        # set name property to be the text given in name_edit
         self.name = self.name_edit.text()
         # if no desc is given default to preset using username
         if self.description_edit.toPlainText():
             self.desc = self.description_edit.toPlainText()
         else:
-            self.desc = f"Ask user: {os.getlogin()} for more info."
+            self.desc = f'Ask user "{os.getlogin()}" for more info.'
         # return default ok action if everything is valid
         return super().accept()

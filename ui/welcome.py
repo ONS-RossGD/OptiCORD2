@@ -1,10 +1,9 @@
 
 
-from PyQt5.QtCore import QEvent, QObject, QSettings, Qt, pyqtSlot
+from PyQt5.QtCore import QEvent, QObject, QSettings, Qt
 from PyQt5.QtGui import QCursor, QPixmap
 from PyQt5.QtWidgets import QGroupBox, QWidget
 from PyQt5.uic import loadUi
-from ui import new
 import actions
 
 class WelcomePage(QWidget, object):
@@ -39,7 +38,7 @@ class WelcomePage(QWidget, object):
             e, self.open_group)
         # substitute of .clicked.connect event
         self.new_group.mousePressEvent = lambda e: actions.create_new(self)
-        self.open_group.mousePressEvent = lambda e: print('open existing')
+        self.open_group.mousePressEvent = lambda e: actions.open(self)
 
     def group_hover_enter(self, a0: QEvent, groupbox: QGroupBox) -> None:
         """Changes the styling of a groupbox when mouse starts hovering"""
