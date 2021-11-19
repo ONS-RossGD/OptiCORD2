@@ -4,7 +4,7 @@ from PyQt5 import QtCore
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QCursor, QPixmap, QTransform
 from PyQt5.QtCore import QEvent, QObject, QSettings, Qt
-from PyQt5.QtWidgets import QFrame, QGroupBox, QLabel, QMainWindow, QWidget
+from PyQt5.QtWidgets import QFrame, QLabel, QWidget
 from PyQt5.uic import loadUi
 
 class NavButton(QFrame):

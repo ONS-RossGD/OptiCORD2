@@ -11,11 +11,10 @@ class WelcomePage(QWidget, object):
     .ui file whilst also allowing custom elements to be built on top."""
     def __init__(self, parent: QObject):
         super(QWidget, self).__init__(parent)
-        self.settings = QSettings()
         # load the vanilla elements from QT Designer file
         loadUi("./ui/welcome.ui", self)
         # get theme folder
-        theme_folder = self.settings.value("active_theme").folder
+        theme_folder = QSettings().value("active_theme").folder
         # create icon pixmaps
         self.new_pixmap = QPixmap(
             f'./ui/resources/{theme_folder}/new_project.svg')
@@ -38,7 +37,7 @@ class WelcomePage(QWidget, object):
             e, self.open_group)
         # substitute of .clicked.connect event
         self.new_group.mousePressEvent = lambda e: actions.create_new(self)
-        self.open_group.mousePressEvent = lambda e: actions.open(self)
+        self.open_group.mousePressEvent = lambda e: actions.open_file(self)
 
     def group_hover_enter(self, a0: QEvent, groupbox: QGroupBox) -> None:
         """Changes the styling of a groupbox when mouse starts hovering"""

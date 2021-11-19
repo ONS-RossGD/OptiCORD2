@@ -1,6 +1,7 @@
 
 
 from PyQt5.QtCore import QObject, QSettings
+from PyQt5.QtGui import QCloseEvent
 from PyQt5.QtWidgets import QAction, QMainWindow
 from PyQt5.uic import loadUi
 from themes import ThemeRegistry, Theme
@@ -11,11 +12,10 @@ class QThemeAction(QAction):
     def __init__(self, theme: Theme, parent: QObject):
         super(QAction, self).__init__(text=theme.display, parent=parent)
         self.theme = theme
-        self.settings = QSettings()
         self.setCheckable(True)
         self.setObjectName(theme.action_name)
         self.triggered['bool'].connect(self.apply)
-        if self.settings.value("active_theme") == self.theme:
+        if QSettings().value("active_theme") == self.theme:
             self.setChecked(True)
 
     def apply(self):
@@ -40,4 +40,13 @@ class MainWindow(QMainWindow, object):
         self.action_new.triggered[bool].connect(
             lambda: actions.create_new(self))
         self.action_open.triggered[bool].connect(
-            lambda: actions.open(self))
+            lambda: actions.open_file(self))
+
+    def closeEvent(self, a0: QCloseEvent) -> None:
+        """Additional checks when user tries to intentionally close
+        the window"""
+        if actions.detect_unsaved_changes():
+            print('unsaved changes')
+        else:
+            print('no changes')
+        return super().closeEvent(a0)
