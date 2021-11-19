@@ -83,7 +83,7 @@
       </sizepolicy>
      </property>
      <property name="title">
-      <string> Create new...</string>
+      <string/>
      </property>
      <layout class="QGridLayout" name="new_group_layout">
       <item row="0" column="0">
@@ -164,7 +164,7 @@
       </sizepolicy>
      </property>
      <property name="title">
-      <string>Open existing...</string>
+      <string/>
      </property>
      <layout class="QHBoxLayout" name="open_group_layout">
       <item>

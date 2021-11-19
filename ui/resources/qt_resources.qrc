@@ -19,6 +19,7 @@
     <file>dark-blue/close.svg</file>
     <file>dark-blue/close_hover.svg</file>
     <file>dark-blue/close_pressed.svg</file>
+    <file>dark-blue/compare.svg</file>
     <file>dark-blue/dialog_cancel.svg</file>
     <file>dark-blue/dialog_close.svg</file>
     <file>dark-blue/dialog_discard.svg</file>
@@ -28,11 +29,16 @@
     <file>dark-blue/dialog_open.svg</file>
     <file>dark-blue/dialog_reset.svg</file>
     <file>dark-blue/dialog_save.svg</file>
+    <file>dark-blue/double_arrow.svg</file>
+    <file>dark-blue/double_arrow_hover.svg</file>
     <file>dark-blue/down_arrow.svg</file>
     <file>dark-blue/down_arrow_disabled.svg</file>
     <file>dark-blue/down_arrow_hover.svg</file>
+    <file>dark-blue/explore.svg</file>
+    <file>dark-blue/file_upload.svg</file>
     <file>dark-blue/hmovetoolbar.svg</file>
     <file>dark-blue/hseptoolbar.svg</file>
+    <file>dark-blue/import.svg</file>
     <file>dark-blue/left_arrow.svg</file>
     <file>dark-blue/left_arrow_disabled.svg</file>
     <file>dark-blue/message_critical.svg</file>
@@ -56,6 +62,7 @@
     <file>dark-blue/up_arrow.svg</file>
     <file>dark-blue/up_arrow_disabled.svg</file>
     <file>dark-blue/up_arrow_hover.svg</file>
+    <file>dark-blue/upload.svg</file>
     <file>dark-blue/vline.svg</file>
     <file>dark-blue/vmovetoolbar.svg</file>
     <file>dark-blue/vseptoolbar.svg</file>
@@ -78,6 +85,7 @@
     <file>dark-green/close.svg</file>
     <file>dark-green/close_hover.svg</file>
     <file>dark-green/close_pressed.svg</file>
+    <file>dark-green/compare.svg</file>
     <file>dark-green/dialog_cancel.svg</file>
     <file>dark-green/dialog_close.svg</file>
     <file>dark-green/dialog_discard.svg</file>
@@ -87,11 +95,16 @@
     <file>dark-green/dialog_open.svg</file>
     <file>dark-green/dialog_reset.svg</file>
     <file>dark-green/dialog_save.svg</file>
+    <file>dark-green/double_arrow.svg</file>
+    <file>dark-green/double_arrow_hover.svg</file>
     <file>dark-green/down_arrow.svg</file>
     <file>dark-green/down_arrow_disabled.svg</file>
     <file>dark-green/down_arrow_hover.svg</file>
+    <file>dark-green/explore.svg</file>
+    <file>dark-green/file_upload.svg</file>
     <file>dark-green/hmovetoolbar.svg</file>
     <file>dark-green/hseptoolbar.svg</file>
+    <file>dark-green/import.svg</file>
     <file>dark-green/left_arrow.svg</file>
     <file>dark-green/left_arrow_disabled.svg</file>
     <file>dark-green/message_critical.svg</file>
@@ -115,6 +128,7 @@
     <file>dark-green/up_arrow.svg</file>
     <file>dark-green/up_arrow_disabled.svg</file>
     <file>dark-green/up_arrow_hover.svg</file>
+    <file>dark-green/upload.svg</file>
     <file>dark-green/vline.svg</file>
     <file>dark-green/vmovetoolbar.svg</file>
     <file>dark-green/vseptoolbar.svg</file>
@@ -137,6 +151,7 @@
     <file>dark-purple/close.svg</file>
     <file>dark-purple/close_hover.svg</file>
     <file>dark-purple/close_pressed.svg</file>
+    <file>dark-purple/compare.svg</file>
     <file>dark-purple/dialog_cancel.svg</file>
     <file>dark-purple/dialog_close.svg</file>
     <file>dark-purple/dialog_discard.svg</file>
@@ -146,11 +161,16 @@
     <file>dark-purple/dialog_open.svg</file>
     <file>dark-purple/dialog_reset.svg</file>
     <file>dark-purple/dialog_save.svg</file>
+    <file>dark-purple/double_arrow.svg</file>
+    <file>dark-purple/double_arrow_hover.svg</file>
     <file>dark-purple/down_arrow.svg</file>
     <file>dark-purple/down_arrow_disabled.svg</file>
     <file>dark-purple/down_arrow_hover.svg</file>
+    <file>dark-purple/explore.svg</file>
+    <file>dark-purple/file_upload.svg</file>
     <file>dark-purple/hmovetoolbar.svg</file>
     <file>dark-purple/hseptoolbar.svg</file>
+    <file>dark-purple/import.svg</file>
     <file>dark-purple/left_arrow.svg</file>
     <file>dark-purple/left_arrow_disabled.svg</file>
     <file>dark-purple/message_critical.svg</file>
@@ -174,6 +194,7 @@
     <file>dark-purple/up_arrow.svg</file>
     <file>dark-purple/up_arrow_disabled.svg</file>
     <file>dark-purple/up_arrow_hover.svg</file>
+    <file>dark-purple/upload.svg</file>
     <file>dark-purple/vline.svg</file>
     <file>dark-purple/vmovetoolbar.svg</file>
     <file>dark-purple/vseptoolbar.svg</file>
@@ -196,6 +217,7 @@
     <file>light-blue/close.svg</file>
     <file>light-blue/close_hover.svg</file>
     <file>light-blue/close_pressed.svg</file>
+    <file>light-blue/compare.svg</file>
     <file>light-blue/dialog_cancel.svg</file>
     <file>light-blue/dialog_close.svg</file>
     <file>light-blue/dialog_discard.svg</file>
@@ -205,11 +227,16 @@
     <file>light-blue/dialog_open.svg</file>
     <file>light-blue/dialog_reset.svg</file>
     <file>light-blue/dialog_save.svg</file>
+    <file>light-blue/double_arrow.svg</file>
+    <file>light-blue/double_arrow_hover.svg</file>
     <file>light-blue/down_arrow.svg</file>
     <file>light-blue/down_arrow_disabled.svg</file>
     <file>light-blue/down_arrow_hover.svg</file>
+    <file>light-blue/explore.svg</file>
+    <file>light-blue/file_upload.svg</file>
     <file>light-blue/hmovetoolbar.svg</file>
     <file>light-blue/hseptoolbar.svg</file>
+    <file>light-blue/import.svg</file>
     <file>light-blue/left_arrow.svg</file>
     <file>light-blue/left_arrow_disabled.svg</file>
     <file>light-blue/message_critical.svg</file>
@@ -233,6 +260,7 @@
     <file>light-blue/up_arrow.svg</file>
     <file>light-blue/up_arrow_disabled.svg</file>
     <file>light-blue/up_arrow_hover.svg</file>
+    <file>light-blue/upload.svg</file>
     <file>light-blue/vline.svg</file>
     <file>light-blue/vmovetoolbar.svg</file>
     <file>light-blue/vseptoolbar.svg</file>
@@ -255,6 +283,7 @@
     <file>light-green/close.svg</file>
     <file>light-green/close_hover.svg</file>
     <file>light-green/close_pressed.svg</file>
+    <file>light-green/compare.svg</file>
     <file>light-green/dialog_cancel.svg</file>
     <file>light-green/dialog_close.svg</file>
     <file>light-green/dialog_discard.svg</file>
@@ -264,11 +293,16 @@
     <file>light-green/dialog_open.svg</file>
     <file>light-green/dialog_reset.svg</file>
     <file>light-green/dialog_save.svg</file>
+    <file>light-green/double_arrow.svg</file>
+    <file>light-green/double_arrow_hover.svg</file>
     <file>light-green/down_arrow.svg</file>
     <file>light-green/down_arrow_disabled.svg</file>
     <file>light-green/down_arrow_hover.svg</file>
+    <file>light-green/explore.svg</file>
+    <file>light-green/file_upload.svg</file>
     <file>light-green/hmovetoolbar.svg</file>
     <file>light-green/hseptoolbar.svg</file>
+    <file>light-green/import.svg</file>
     <file>light-green/left_arrow.svg</file>
     <file>light-green/left_arrow_disabled.svg</file>
     <file>light-green/message_critical.svg</file>
@@ -292,6 +326,7 @@
     <file>light-green/up_arrow.svg</file>
     <file>light-green/up_arrow_disabled.svg</file>
     <file>light-green/up_arrow_hover.svg</file>
+    <file>light-green/upload.svg</file>
     <file>light-green/vline.svg</file>
     <file>light-green/vmovetoolbar.svg</file>
     <file>light-green/vseptoolbar.svg</file>
@@ -314,6 +349,7 @@
     <file>light-purple/close.svg</file>
     <file>light-purple/close_hover.svg</file>
     <file>light-purple/close_pressed.svg</file>
+    <file>light-purple/compare.svg</file>
     <file>light-purple/dialog_cancel.svg</file>
     <file>light-purple/dialog_close.svg</file>
     <file>light-purple/dialog_discard.svg</file>
@@ -323,11 +359,16 @@
     <file>light-purple/dialog_open.svg</file>
     <file>light-purple/dialog_reset.svg</file>
     <file>light-purple/dialog_save.svg</file>
+    <file>light-purple/double_arrow.svg</file>
+    <file>light-purple/double_arrow_hover.svg</file>
     <file>light-purple/down_arrow.svg</file>
     <file>light-purple/down_arrow_disabled.svg</file>
     <file>light-purple/down_arrow_hover.svg</file>
+    <file>light-purple/explore.svg</file>
+    <file>light-purple/file_upload.svg</file>
     <file>light-purple/hmovetoolbar.svg</file>
     <file>light-purple/hseptoolbar.svg</file>
+    <file>light-purple/import.svg</file>
     <file>light-purple/left_arrow.svg</file>
     <file>light-purple/left_arrow_disabled.svg</file>
     <file>light-purple/message_critical.svg</file>
@@ -351,6 +392,7 @@
     <file>light-purple/up_arrow.svg</file>
     <file>light-purple/up_arrow_disabled.svg</file>
     <file>light-purple/up_arrow_hover.svg</file>
+    <file>light-purple/upload.svg</file>
     <file>light-purple/vline.svg</file>
     <file>light-purple/vmovetoolbar.svg</file>
     <file>light-purple/vseptoolbar.svg</file>

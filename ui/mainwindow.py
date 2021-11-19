@@ -28,7 +28,7 @@ class QThemeAction(QAction):
 class MainWindow(QMainWindow, object):
     """Main window of application"""
     def __init__(self):
-        super(MainWindow, self).__init__()
+        super(QMainWindow, self).__init__()
         loadUi("./ui/mainwindow.ui", self)
         self.themes = ThemeRegistry() # load all themes
         # apply the users selected theme defaulted to dark purple

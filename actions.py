@@ -2,7 +2,7 @@ import os
 import pandas as pd
 from PyQt5.QtWidgets import QFileDialog
 from PyQt5.QtCore import QObject, QSettings
-from ui import new
+from ui import new, active
 from datetime import datetime
 
 def create_new(parent: QObject) -> None:
@@ -30,4 +30,4 @@ def open(parent: QObject) -> None:
         '/'.join(filepath.split('/')[:-1]))
     # read file with pandas
     df = pd.read_hdf(filepath, 'creation')
-    print(df.loc['Desc', 'Value'])
+    parent.window().setCentralWidget(active.ActiveWidget(parent.window()))

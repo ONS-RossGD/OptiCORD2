@@ -45,7 +45,7 @@ QToolTip
     /* 0.2ex is the smallest value that's not ignored on Windows. */
     border: 0.04em solid #eff0f1;
     background-color: #31363b;
-    alternate-background-color: #31363b;
+    alternate-background-color: #1d2023;
     color: #eff0f1;
     padding: 0.1em;
     opacity: 200;
@@ -265,14 +265,14 @@ QRadioButton::indicator:unchecked:disabled
 
 QMenuBar
 {
-    background-color: #31363b;
+    background-color: #1d2023;
     color: #eff0f1;
     border-bottom: 0.1em solid #3daee9;
 }
 
 QMenuBar::item
 {
-    background: transparent;
+    background: #1d2023;
 }
 
 QMenuBar::item:selected
@@ -311,7 +311,6 @@ QMenu::item
     /* Add extra padding on the right for the QMenu arrow */
     padding: 0.23em 1.5em 0.23em 1.3em;
     border: 0.09em solid transparent;
-    background: transparent;
 }
 
 QMenu::item:selected
@@ -1004,6 +1003,7 @@ QCalendarWidget QSpinBox
 QLabel
 {
     border: 0em solid black;
+    background: transparent;
 }
 
 /* BORDERS */
@@ -1950,6 +1950,11 @@ QMessageBox QPushButton
     min-width: 5em;
 }
 
+QStatusBar{
+    background: #1d2023;
+    color: #eff0f1;
+}
+
 QLabel#new_group_image,
 QLabel#open_group_image{
     margin-right: 15px;
@@ -1957,8 +1962,37 @@ QLabel#open_group_image{
 
 QGroupBox[hovering="true"]{
     border: 0.04em solid #3daee9;
+    background: #1d2023;
 }
 
 *[invalid_input="true"]{
     border: 0.04em solid #b33e3e;
+}
+
+NavButton{
+    border-bottom: 0.04em solid #eff0f1;
+    margin: 0px;
+    background: transparent;
+}
+
+NavButton:hover{
+    border-right: 0.04em solid #eff0f1;
+    border-bottom: 0.04em solid #eff0f1;
+    border-left: 0.04em solid #eff0f1;
+    background: #3daee9;
+}
+NavButton#nav_button_load:hover{
+    border: 0.04em solid #eff0f1;
+    background: #3daee9;
+}
+
+QFrame#nav_frame{
+    border: 0px;
+    border-right: 0.04em solid #eff0f1;
+    background: #1d2023;
+    padding: 0px;
+}
+
+QLabel#active_expand{
+    margin: 1em;
 }
