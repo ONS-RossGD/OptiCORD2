@@ -4,7 +4,6 @@ from PyQt5.QtCore import QObject
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QDialog, QWidget
 from PyQt5.uic import loadUi
-import util
 import os
 
 class NewDialog(QDialog, object):
@@ -13,8 +12,6 @@ class NewDialog(QDialog, object):
         super(QDialog, self).__init__(parent, Qt.WindowTitleHint)
         # load the vanilla elements from QT Designer file
         loadUi("./ui/new.ui", self)
-        # add validator to name field to ensure valid filename
-        self.name_edit.setValidator(util.FilenameValidator())
         self.name_edit.textChanged.connect(lambda : \
             self.reset_invalid_input(self.name_edit))
 

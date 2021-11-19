@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QIcon
 from ui import mainwindow, welcome
 from ui.resources import resource_init # looks redundant but isn't
+from util import TempFile
 
 def main():
     """Main loop"""
@@ -25,6 +26,7 @@ def main():
     mw.setWindowIcon(QIcon('./ui/resources/OptiCORD_icon.png'))
     # set the window title
     mw.setWindowTitle(f'OptiCORD v{__version__}')
+    TempFile.check_existing()
     # initially show the welcome page
     mw.setCentralWidget(welcome.WelcomePage(mw))
     mw.show() # begin showing to user
