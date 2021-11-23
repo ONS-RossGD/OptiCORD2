@@ -1,26 +1,26 @@
 import os
-import pandas as pd
-import util
+import h5py
 from PyQt5.QtWidgets import QFileDialog
 from PyQt5.QtCore import QObject, QSettings
-from ui import new, active
+from ui.active import ActiveWidget
+from ui.new import NewTracker
 from datetime import datetime
+from util import TempFile
 
 def create_new(parent: QObject) -> None:
     """Sets up the NewDialog and creates a new change tracker file
     using user inputs"""
-    new_dialog = new.NewDialog(parent)
+    new_dialog = NewTracker(parent)
     if not new_dialog.exec():
         return # return if user closes dialog without meeting accept criteria
-    #filepath = f'{new_dialog.url}\\{new_dialog.name}.opticord'
-    # init the temp file for future editing
-    util.TempFile.create_new()
-    df = pd.DataFrame(columns=['Value'])
-    df.loc['Name', 'Value'] = new_dialog.name
-    df.loc['Desc', 'Value'] = new_dialog.desc
-    df.loc['Creator', 'Value'] = os.getlogin()
-    df.loc['Date', 'Value'] = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
-    df.to_hdf(util.TempFile.path, 'creation', 'w')
+    TempFile.create_new() # init the temp file for future editing
+    # write attributes to the new file
+    with h5py.File(TempFile.path, 'r+') as store:
+        store.attrs['name'] = new_dialog.name
+        store.attrs['description'] = new_dialog.desc
+        store.attrs['creator'] = os.getlogin()
+        store.attrs['creation_date'] = datetime.now().strftime(
+            "%d/%m/%Y, %H:%M:%S")
 
 def open_file(parent: QObject) -> None:
     """Creates an open file dialog window for user to select an existing
@@ -32,21 +32,22 @@ def open_file(parent: QObject) -> None:
     QSettings().setValue('last_open_location', # update last_open_location
         '/'.join(filepath.split('/')[:-1]))
     # init the temp file for future editing
-    util.TempFile.create_from_existing(filepath)
-    # read file with pandas
-    df = pd.read_hdf(filepath, 'creation')
-    print(df.head())
-    parent.window().setCentralWidget(active.ActiveWidget(parent.window()))
+    TempFile.create_from_existing(filepath)
+    # read the h5 file
+    with h5py.File(TempFile.path, 'r+') as store:
+        # TODO remove the print
+        [print(f'{i}: {j}') for (i,j) in store.attrs.items()]
+    parent.window().setCentralWidget(ActiveWidget(parent.window()))
 
 def save(parent: QObject) -> bool:
     """Saves the temp file to the location a temp file was created 
     from. If temp file was brand new default to save_as method.
     Returns True if save was successful, False if file was not saved."""
     # if a saved path doesn't exist default to save as
-    if util.TempFile.saved_path == '':
+    if TempFile.saved_path == '':
         return save_as(parent)
     # otherwise overwrite the file where it was opened
-    util.TempFile.save_to_location(util.TempFile.saved_path)
+    TempFile.save_to_location(TempFile.saved_path)
     return True
 
 def save_as(parent: QObject) -> bool:
@@ -56,23 +57,22 @@ def save_as(parent: QObject) -> bool:
     without saving."""
     # create a save dialog window
     save_dialog = QFileDialog(parent, 'Save As...',
-        util.TempFile.saved_path)
+        TempFile.saved_path)
     save_dialog.setFileMode(QFileDialog.AnyFile)
     save_dialog.setNameFilter("OptiCORD file (*.opticord)")
     save_dialog.setAcceptMode(QFileDialog.AcceptSave)
     if not save_dialog.exec():
         return False
     path = save_dialog.selectedFiles()[0]
-    util.TempFile.save_to_location(path)
+    TempFile.save_to_location(path)
     return True
-
 
 def detect_unsaved_changes() -> bool:
     """Detects whether a temp file contains changes"""
     print('detecting changes')
     # get saved_path from settings
-    saved_path = util.TempFile.saved_path
-    temp_path = util.TempFile.path
+    saved_path = TempFile.saved_path
+    temp_path = TempFile.path
 
     print(f'saved: {saved_path}, temp: {temp_path}')
     
