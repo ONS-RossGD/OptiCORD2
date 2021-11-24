@@ -1,8 +1,13 @@
 
 from PyQt5.QtGui import QValidator
-from PyQt5.QtCore import QDir, QTemporaryFile, pyqtSignal
+from PyQt5.QtCore import QDir, QObject, QTemporaryFile, pyqtSignal
 from shutil import copyfile
+from PyQt5.QtWidgets import QApplication
 import os
+
+class StandardFormats():
+    """Standard formats used across OptiCORD scripts"""
+    DATETIME = '%d/%m/%Y, %H:%M:%S'
 
 class TempFile():
     """Class to hold information for the temporary file where
@@ -54,13 +59,22 @@ class TempFile():
         if TempFile.path != '':
             os.remove(TempFile.path)
 
-# TODO currently legacy, remove before release if still legacy
-class FilenameValidator(QValidator):
+class NameValidator(QValidator):
     """Custom validator signal that reacts to state updates"""
+    FULL = 0
+    PARTIAL = 1
+    NONE = 2
     
-    def __init__(self, *args, **kwargs):
-        QValidator.__init__(self, *args, **kwargs)
-        self.bad_chars = {'\\','/',':','*','?','"','<','>','|'}
+    def __init__(self, parent: QObject, mode: int = NONE):
+        QValidator.__init__(self, parent)
+        if mode == self.FULL:
+            self.bad_chars = {'\\','/',':','*','?','"','<','>','|'}
+        elif mode == self.PARTIAL:
+            self.bad_chars = {'\\','/'}
+        elif mode == self.NONE:
+            self.bad_chars = {}
+        else:
+            raise ValueError("Unknown mode")
 
     def validate(self, value, pos):
         if len(value) > 0:
@@ -69,4 +83,5 @@ class FilenameValidator(QValidator):
         else:
             if value == "":
                 return QValidator.Intermediate, value, pos
+        QApplication.beep()
         return QValidator.Invalid, value, pos

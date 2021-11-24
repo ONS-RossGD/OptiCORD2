@@ -1682,6 +1682,7 @@ QTableView
 QAbstractItemView::item
 {
     color: #eff0f1;
+    min-height: 1.1em;
 }
 
 QAbstractItemView::item:pressed
@@ -1973,6 +1974,10 @@ NavButton{
     border-bottom: 0.04em solid #eff0f1;
     margin: 0px;
     background: transparent;
+}
+
+NavButton[active="true"]{
+    background: #872a99;
 }
 
 NavButton:hover{

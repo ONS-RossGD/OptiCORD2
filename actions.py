@@ -1,11 +1,12 @@
 import os
+from uuid import uuid4
 import h5py
 from PyQt5.QtWidgets import QFileDialog
 from PyQt5.QtCore import QObject, QSettings
 from ui.active import ActiveWidget
 from ui.new import NewTracker
 from datetime import datetime
-from util import TempFile
+from util import StandardFormats, TempFile
 
 def create_new(parent: QObject) -> None:
     """Sets up the NewDialog and creates a new change tracker file
@@ -14,13 +15,18 @@ def create_new(parent: QObject) -> None:
     if not new_dialog.exec():
         return # return if user closes dialog without meeting accept criteria
     TempFile.create_new() # init the temp file for future editing
-    # write attributes to the new file
+    # write attributes to the new file and init groups
     with h5py.File(TempFile.path, 'r+') as store:
         store.attrs['name'] = new_dialog.name
         store.attrs['description'] = new_dialog.desc
         store.attrs['creator'] = os.getlogin()
         store.attrs['creation_date'] = datetime.now().strftime(
-            "%d/%m/%Y, %H:%M:%S")
+            StandardFormats.DATETIME)
+        store.attrs['id'] = uuid4().hex
+        store.create_group('iterations')
+        store.create_group('comparisons')
+    # redirect to activity window
+    parent.window().setCentralWidget(ActiveWidget(parent.window()))
 
 def open_file(parent: QObject) -> None:
     """Creates an open file dialog window for user to select an existing
@@ -37,6 +43,7 @@ def open_file(parent: QObject) -> None:
     with h5py.File(TempFile.path, 'r+') as store:
         # TODO remove the print
         [print(f'{i}: {j}') for (i,j) in store.attrs.items()]
+    # redirect to activity window
     parent.window().setCentralWidget(ActiveWidget(parent.window()))
 
 def save(parent: QObject) -> bool:

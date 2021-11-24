@@ -2,19 +2,27 @@
 
 from PyQt5 import QtCore
 from PyQt5 import QtWidgets
-from PyQt5.QtGui import QCursor, QPixmap, QTransform
-from PyQt5.QtCore import QEvent, QObject, QSettings, Qt
-from PyQt5.QtWidgets import QFrame, QLabel, QWidget
+from PyQt5.QtGui import QCursor, QMouseEvent, QPixmap, QTransform
+from PyQt5.QtCore import QEvent, QObject, QSettings, Qt, pyqtSignal
+from PyQt5.QtWidgets import QFrame, QLabel, QStackedWidget, QWidget
 from PyQt5.uic import loadUi
+from ui.load import LoadWidget
 
 class NavButton(QFrame):
     """Navigation 'Button', really a QFrame modified to act like
-    a button"""
-    def __init__(self, text: str, svg: str, parent: QObject) -> None:
+    a button."""
+    clicked = pyqtSignal()
+
+    def __init__(self, text: str, svg: str, widget: QWidget,
+        stack: QStackedWidget, parent: QObject) -> None:
         super(QFrame, self).__init__(parent=parent)
         loadUi("./ui/navbutton.ui", self)
         self.text = text
-        self.setObjectName("nav_button_"+text.replace(' ', '_').lower())
+        self.parent = parent
+        self.stack = stack
+        self.widget = widget
+        # add widget to stack
+        self.stack.addWidget(widget)
         # get theme folder
         theme_folder = QSettings().value("active_theme").folder
         # create icon pixmaps
@@ -37,6 +45,25 @@ class NavButton(QFrame):
         # change cursor to hand
         self.setCursor(QCursor(Qt.PointingHandCursor))
         return super().enterEvent(a0)
+
+    def activate(self):
+        """Activate the widget assosciated with the nav button"""
+        nav_buttons = self.parent.findChildren(NavButton)
+        # deactivate all NavButtons
+        [x.setProperty("active", "false") for x in nav_buttons]
+        # set the clicked button active
+        self.setProperty("active", "true")
+        # style has to be unpolished and polished to update
+        [x.style().unpolish(x) for x in nav_buttons]
+        [x.style().polish(x) for x in nav_buttons]
+        # set the widget
+        self.stack.setCurrentWidget(self.widget)
+
+    def mouseReleaseEvent(self, a0: QMouseEvent) -> None:
+        """Custom clicked event"""
+        self.clicked.emit() # emit clicked signal
+        self.activate()
+        return super().mouseReleaseEvent(a0)
 
 class ActiveWidget(QWidget, object):
     """Main navigation element to show the ui for the user's
@@ -61,16 +88,26 @@ class ActiveWidget(QWidget, object):
         self.expand_icon_hover = QPixmap(
             f'./ui/resources/{theme_folder}/double_arrow_hover.svg')
 
+
+        self.nav_button_load = NavButton("Load", 'import',
+            LoadWidget(self.stack), self.stack, self.nav_frame)
+        self.nav_button_load.setObjectName("nav_button_load")
+        self.nav_button_compare = NavButton("Compare", 'compare',
+            LoadWidget(self.stack), self.stack, self.nav_frame)
+        self.nav_button_compare.setObjectName("nav_button_compare")
+        self.nav_button_explore = NavButton("Explore", 'explore',
+            LoadWidget(self.stack), self.stack, self.nav_frame)
+        self.nav_button_explore.setObjectName("nav_button_explore")
         spacer = QtWidgets.QSpacerItem(20, 518, QtWidgets.QSizePolicy.Minimum,
             QtWidgets.QSizePolicy.Expanding)
-        self.nav_frame_layout.addWidget(NavButton("Load", 'import',
-            self.nav_frame), 0, 0, 1, 1)
-        self.nav_frame_layout.addWidget(NavButton("Compare", 'compare',
-            self.nav_frame), 1, 0, 1, 1)
-        self.nav_frame_layout.addWidget(NavButton("Explore", 'explore',
-            self.nav_frame), 2, 0, 1, 1)
+        self.nav_frame_layout.addWidget(self.nav_button_load, 0, 0, 1, 1)
+        self.nav_frame_layout.addWidget(self.nav_button_compare, 1, 0, 1, 1)
+        self.nav_frame_layout.addWidget(self.nav_button_explore, 2, 0, 1, 1)
         self.nav_frame_layout.addItem(spacer, 3, 0, 1, 1)
         self.nav_frame_layout.addWidget(self.expand_label, 4, 0, 1, 1)
+
+        # init to load page
+        self.nav_button_load.activate()
 
         # initialise navbar state depending on user setting
         if QSettings().value('navbar_expanded') == 'true':
@@ -78,6 +115,9 @@ class ActiveWidget(QWidget, object):
         else:
             self._collapse(False)
 
+        self.nav_button_load.clicked.connect(lambda: print("Load clicked"))
+        self.nav_button_compare.clicked.connect(lambda: print("Compare clicked"))
+        self.nav_button_explore.clicked.connect(lambda: print("Explore clicked"))
         self.expand_label.enterEvent = lambda e: self._expand_hover_enter(e)
         self.expand_label.leaveEvent = lambda e: self._expand_hover_leave(e)
         self.expand_label.mousePressEvent = lambda e: self._toggle_expand()

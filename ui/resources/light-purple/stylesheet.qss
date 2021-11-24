@@ -850,7 +850,7 @@ QComboBox QAbstractItemView
 {
     /* This happens for the drop-down menu always, whether editable or not.*/
     background-color: #eff0f1;
-    selection-background-color: rgba(147, 45, 200, 0.5);
+    selection-background-color: rgba(137, 25, 190, 0.5);
     outline-color: 0em;
     border-radius: 0.09em;
 }
@@ -1682,11 +1682,12 @@ QTableView
 QAbstractItemView::item
 {
     color: #31363b;
+    min-height: 1.1em;
 }
 
 QAbstractItemView::item:pressed
 {
-    background: rgba(147, 45, 200, 0.5);
+    background: rgba(137, 25, 190, 0.5);
     color: #31363b;
 }
 
@@ -1701,8 +1702,8 @@ QAbstractItemView::item:selected:active
     background: qlineargradient(
         x1: 0.5, y1: 0.5
         x2: 0.5, y2: 1,
-        stop: 0 rgba(147, 45, 200, 0.5),
-        stop: 1 rgba(147, 45, 200, 0.5)
+        stop: 0 rgba(137, 25, 190, 0.5),
+        stop: 1 rgba(137, 25, 190, 0.5)
     );
     color: #31363b;
 }
@@ -1973,6 +1974,10 @@ NavButton{
     border-bottom: 0.04em solid #31363b;
     margin: 0px;
     background: transparent;
+}
+
+NavButton[active="true"]{
+    background: rgba(137, 25, 190, 0.5);
 }
 
 NavButton:hover{
