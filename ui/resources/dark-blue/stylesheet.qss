@@ -1957,7 +1957,8 @@ QStatusBar{
 }
 
 QLabel#new_group_image,
-QLabel#open_group_image{
+QLabel#open_group_image,
+QLabel#icon_label{
     margin-right: 15px;
 }
 

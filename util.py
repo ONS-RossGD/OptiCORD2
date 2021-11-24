@@ -1,6 +1,6 @@
 
 from PyQt5.QtGui import QValidator
-from PyQt5.QtCore import QDir, QObject, QTemporaryFile, pyqtSignal
+from PyQt5.QtCore import QDir, QObject, QTemporaryFile
 from shutil import copyfile
 from PyQt5.QtWidgets import QApplication
 import os
@@ -13,14 +13,20 @@ class TempFile():
     """Class to hold information for the temporary file where
     changes are made before saving."""
     saved_path: str = ''
+    recovery_path: str = ''
     path: str = ''
 
-    def check_existing() -> None:
+    def check_existing() -> bool:
         """Checks for an existing TempFile in case user wants to 
         attempt recovery"""
         existing_files = [filename for filename in os.listdir(
             QDir.temp().absolutePath()) if filename.startswith("OptiCORD-")]
-        print(existing_files)
+        if len(existing_files) > 1:
+            # TODO raise error?
+            print('Too many unexpected files')
+        if existing_files:
+            TempFile.recovery_path = QDir.temp().absoluteFilePath(
+                existing_files[0])
 
     def create_new() -> None:
         """Creates a brand new temp file"""
@@ -47,6 +53,10 @@ class TempFile():
         TempFile.saved_path = existing_path
         TempFile.path = f.fileName()
         copyfile(existing_path, f.fileName())
+
+    def recover() -> None:
+        """Opens the recovery file"""
+        TempFile.path = TempFile.recovery_path
 
     def save_to_location(filepath: str) -> None:
         """Saves the temp file to a specified filepath, overwriting any

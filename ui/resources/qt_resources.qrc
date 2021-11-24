@@ -51,6 +51,7 @@
     <file>dark-blue/radio_checked_disabled.svg</file>
     <file>dark-blue/radio_unchecked.svg</file>
     <file>dark-blue/radio_unchecked_disabled.svg</file>
+    <file>dark-blue/recover.svg</file>
     <file>dark-blue/right_arrow.svg</file>
     <file>dark-blue/right_arrow_disabled.svg</file>
     <file>dark-blue/sizegrip.svg</file>
@@ -117,6 +118,7 @@
     <file>dark-green/radio_checked_disabled.svg</file>
     <file>dark-green/radio_unchecked.svg</file>
     <file>dark-green/radio_unchecked_disabled.svg</file>
+    <file>dark-green/recover.svg</file>
     <file>dark-green/right_arrow.svg</file>
     <file>dark-green/right_arrow_disabled.svg</file>
     <file>dark-green/sizegrip.svg</file>
@@ -183,6 +185,7 @@
     <file>dark-purple/radio_checked_disabled.svg</file>
     <file>dark-purple/radio_unchecked.svg</file>
     <file>dark-purple/radio_unchecked_disabled.svg</file>
+    <file>dark-purple/recover.svg</file>
     <file>dark-purple/right_arrow.svg</file>
     <file>dark-purple/right_arrow_disabled.svg</file>
     <file>dark-purple/sizegrip.svg</file>
@@ -249,6 +252,7 @@
     <file>light-blue/radio_checked_disabled.svg</file>
     <file>light-blue/radio_unchecked.svg</file>
     <file>light-blue/radio_unchecked_disabled.svg</file>
+    <file>light-blue/recover.svg</file>
     <file>light-blue/right_arrow.svg</file>
     <file>light-blue/right_arrow_disabled.svg</file>
     <file>light-blue/sizegrip.svg</file>
@@ -315,6 +319,7 @@
     <file>light-green/radio_checked_disabled.svg</file>
     <file>light-green/radio_unchecked.svg</file>
     <file>light-green/radio_unchecked_disabled.svg</file>
+    <file>light-green/recover.svg</file>
     <file>light-green/right_arrow.svg</file>
     <file>light-green/right_arrow_disabled.svg</file>
     <file>light-green/sizegrip.svg</file>
@@ -381,6 +386,7 @@
     <file>light-purple/radio_checked_disabled.svg</file>
     <file>light-purple/radio_unchecked.svg</file>
     <file>light-purple/radio_unchecked_disabled.svg</file>
+    <file>light-purple/recover.svg</file>
     <file>light-purple/right_arrow.svg</file>
     <file>light-purple/right_arrow_disabled.svg</file>
     <file>light-purple/sizegrip.svg</file>

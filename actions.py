@@ -6,6 +6,7 @@ from PyQt5.QtCore import QObject, QSettings
 from ui.active import ActiveWidget
 from ui.new import NewTracker
 from datetime import datetime
+from ui.recovery import RecoveryPopup
 from util import StandardFormats, TempFile
 
 def create_new(parent: QObject) -> None:
@@ -110,3 +111,15 @@ def detect_unsaved_changes() -> bool:
             temp_byte = temp.read(1)
         # if loop gets passed files are identical
         return False
+
+def attempt_recovery(parent: QObject) -> None:
+    """Attempt recovery of a temp file"""
+    recovery_dlg = RecoveryPopup(parent)
+    if not recovery_dlg.exec():
+        # if user chose not to attempt recovery delete temp file
+        os.remove(TempFile.recovery_path)
+        TempFile.recovery_path = ''
+        return
+    TempFile.recover()
+    # redirect to activity window
+    parent.window().setCentralWidget(ActiveWidget(parent.window()))

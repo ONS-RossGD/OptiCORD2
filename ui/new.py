@@ -1,8 +1,7 @@
 
 
 from typing import List
-from PyQt5.QtCore import QObject
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QObject
 from PyQt5.QtWidgets import QApplication, QDialog, QMessageBox, QWidget
 from PyQt5.uic import loadUi
 import os

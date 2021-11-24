@@ -35,7 +35,7 @@
       </font>
      </property>
      <property name="text">
-      <string>Warning! The file you are working on has unsaved changes! Choose to save the changes, discard them, or cancel closing the file.</string>
+      <string>Warning! The file you are working on has unsaved changes! Choose to save the changes, discard them, or cancel and return to editing.</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
