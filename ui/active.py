@@ -31,7 +31,7 @@ class NavButton(QFrame):
         # re-scale icons
         self.icon.setPixmap(self.pixmap.scaled(
             30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        
+
         self._retranslate()
 
         self.enterEvent = lambda e: self._enter(e)
@@ -75,8 +75,6 @@ class ActiveWidget(QWidget, object):
         loadUi("./ui/active.ui", self)
         self.expand_label = QLabel(self)
         self.expand_label.setObjectName("active_expand")
-        self.expand_label.setAlignment(
-            QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         # get theme folder
         theme_folder = QSettings().value("active_theme").folder
         # create transformation map
@@ -152,16 +150,18 @@ class ActiveWidget(QWidget, object):
         """Expands the navbar"""
         [navbutton.text_label.show() for navbutton in \
             self.findChildren(NavButton)]
-        self.nav_frame.setMinimumSize(QtCore.QSize(150, 0))
-        self.nav_frame.setMaximumSize(QtCore.QSize(150, 16777215))
+        # align to right
+        self.expand_label.setAlignment(
+            QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|
+            QtCore.Qt.AlignVCenter)
         self.expand_label.setPixmap(self._get_expand_icon(hovering))
 
     def _collapse(self, hovering: bool) -> None:
         """Collapses the navbar"""
         [navbutton.text_label.hide() for navbutton in \
             self.findChildren(NavButton)]
-        self.nav_frame.setMinimumSize(QtCore.QSize(50, 0))
-        self.nav_frame.setMaximumSize(QtCore.QSize(50, 16777215))
+        # align to center
+        self.expand_label.setAlignment(QtCore.Qt.AlignCenter)
         self.expand_label.setPixmap(self._get_expand_icon(hovering))
 
     def _toggle_expand(self) -> None:

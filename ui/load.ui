@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Form</class>
- <widget class="QWidget" name="Form">
+ <class>load_form</class>
+ <widget class="QWidget" name="load_form">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -13,13 +13,44 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="2">
+  <layout class="QGridLayout" name="load_layout">
+   <property name="leftMargin">
+    <number>10</number>
+   </property>
+   <property name="topMargin">
+    <number>10</number>
+   </property>
+   <property name="rightMargin">
+    <number>10</number>
+   </property>
+   <property name="bottomMargin">
+    <number>10</number>
+   </property>
+   <property name="spacing">
+    <number>10</number>
+   </property>
+   <item row="1" column="3">
+    <widget class="QPushButton" name="import_iteration">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+       <horstretch>1</horstretch>
+       <verstretch>1</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>Import Iteration</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="2">
     <widget class="QPushButton" name="new_iteration">
      <property name="sizePolicy">
       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
+       <horstretch>1</horstretch>
+       <verstretch>1</verstretch>
       </sizepolicy>
      </property>
      <property name="text">
@@ -27,27 +58,60 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="0">
+   <item row="2" column="1" colspan="3">
+    <widget class="QTextEdit" name="selection_info">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>2</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
+     <property name="placeholderText">
+      <string>Waiting for iteration to be selected...</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
     <widget class="QComboBox" name="iteration_dropdown">
      <property name="sizePolicy">
       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
+       <horstretch>2</horstretch>
+       <verstretch>1</verstretch>
       </sizepolicy>
      </property>
     </widget>
    </item>
-   <item row="0" column="1">
-    <widget class="QLabel" name="label">
+   <item row="3" column="1" colspan="3">
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
        <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
+       <verstretch>6</verstretch>
       </sizepolicy>
      </property>
-     <property name="text">
-      <string>or</string>
+     <property name="tabPosition">
+      <enum>QTabWidget::South</enum>
      </property>
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <property name="tabBarAutoHide">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="tab">
+      <attribute name="title">
+       <string>Tab 1</string>
+      </attribute>
+     </widget>
     </widget>
    </item>
   </layout>

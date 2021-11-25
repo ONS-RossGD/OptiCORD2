@@ -19,10 +19,12 @@ def main():
     app.setApplicationName("OptiCORD")
     app.setOrganizationName("ONS")
     app.setOrganizationDomain("ons.gov.uk")
+    # app.setFont(QFont('Arial', 14))
     # TODO python hack to set task bar icon, may not be needed in exe
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
         f'ONS.OptiCORD.{__version__}')
     mw = mainwindow.MainWindow() # creates the main window instance
+    # app.setStyleSheet(app.styleSheet() + 'QLabel{font-size: 20pt;}')
     # set the icon
     mw.setWindowIcon(QIcon('./ui/resources/OptiCORD_icon.png'))
     # set the window title

@@ -267,7 +267,8 @@ QMenuBar
 {
     background-color: #1d2023;
     color: #eff0f1;
-    border-bottom: 0.1em solid #3daee9;
+    font: 12pt 'Arial';
+    border-bottom: 1px solid #3daee9;
 }
 
 QMenuBar::item
@@ -299,6 +300,7 @@ QMenu
 {
     color: #eff0f1;
     margin: 0.09em;
+    font: 12pt 'Arial';
 }
 
 QMenu::icon
@@ -412,6 +414,7 @@ QLineEdit
     border: 0.04em solid #76797c;
     border-radius: 0.09em;
     color: #eff0f1;
+    font: 12pt 'Arial';
 }
 
 QAbstractScrollArea
@@ -602,6 +605,7 @@ QTextEdit
     background-color: #1d2023;
     color: #eff0f1;
     border: 0.04em solid #76797c;
+    font: 12pt 'Arial';
 }
 
 QPlainTextEdit
@@ -734,6 +738,7 @@ QPushButton
     border-radius: 0.09em;
     outline: none;
     min-height: 1.1em;
+    font: 12pt 'Arial';
 }
 
 QComboBox:open,
@@ -783,6 +788,7 @@ QComboBox
     border-radius: 0.09em;
     padding: 0.23em;
     min-width: 2.5em;
+    font: 12pt 'Arial';
 }
 
 QComboBox:editable
@@ -853,6 +859,7 @@ QComboBox QAbstractItemView
     selection-background-color: #2a79a3;
     outline-color: 0em;
     border-radius: 0.09em;
+    font: 12pt 'Arial';
 }
 
 QComboBox::drop-down
@@ -1999,6 +2006,14 @@ QFrame#nav_frame{
     padding: 0px;
 }
 
+QFrame#nav_subframe{
+    background: transparent;
+}
+
 QLabel#active_expand{
-    margin: 1em;
+    margin: 10px;
+}
+
+QLabel#info_text{
+    font: 12pt 'Arial';
 }

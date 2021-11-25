@@ -49,8 +49,13 @@
       <string>Theme</string>
      </property>
     </widget>
+    <widget class="QMenu" name="menu_font_size">
+     <property name="title">
+      <string>Font Size</string>
+     </property>
+    </widget>
     <addaction name="menu_theme"/>
-    <addaction name="action_font"/>
+    <addaction name="menu_font_size"/>
    </widget>
    <widget class="QMenu" name="menu_help">
     <property name="title">
@@ -96,11 +101,6 @@
     <string>Ctrl+Shift+S</string>
    </property>
   </action>
-  <action name="action_font">
-   <property name="text">
-    <string>Font</string>
-   </property>
-  </action>
   <action name="actionAbout_OptiCORD">
    <property name="text">
     <string>About OptiCORD</string>
@@ -119,6 +119,30 @@
   <action name="actiong">
    <property name="text">
     <string>g</string>
+   </property>
+  </action>
+  <action name="action_small">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Small</string>
+   </property>
+  </action>
+  <action name="action_medium">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Medium</string>
+   </property>
+  </action>
+  <action name="action_large">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Large</string>
    </property>
   </action>
  </widget>

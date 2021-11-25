@@ -1,5 +1,6 @@
 
 
+import re
 from PyQt5 import QtCore
 from PyQt5.QtCore import QObject, QSettings, Qt
 from PyQt5.QtGui import QCloseEvent, QPixmap
@@ -25,6 +26,30 @@ class QThemeAction(QAction):
         self.theme.apply()
         [x.setChecked(False) for x in self.parentWidget()\
             .findChildren(QThemeAction)]
+        self.setChecked(True)
+
+class QFontAction(QAction):
+    """A QAction Object for Theme items"""
+    def __init__(self, text: str, size: int, parent: QObject):
+        super(QAction, self).__init__(parent, text=text)
+        self.text = text
+        self.size = size
+        self.setCheckable(True)
+        self.setObjectName(f'action_{text.replace(" ", "_").lower()}')
+        self.triggered['bool'].connect(self.apply)
+        if QSettings().value("font") == {'text': text, 'size': size}:
+            self.apply()
+
+    def apply(self):
+        """Apply the selected font size"""
+        QSettings().setValue("font", dict({'text': self.text,
+            'size': self.size}))
+        ss = QApplication.instance().styleSheet()
+        font = f'font: {self.size}pt'
+        new_ss = re.sub('font: (.*?)pt', font, ss)
+        QApplication.instance().setStyleSheet(new_ss)
+        [x.setChecked(False) for x in self.parentWidget()\
+            .findChildren(QFontAction)]
         self.setChecked(True)
 
 class UnsavedChanges(QDialog):
@@ -82,6 +107,14 @@ class MainWindow(QMainWindow, object):
         # fill the themes menu 
         for theme in self.themes:
             self.menu_theme.addAction(QThemeAction(theme, self))
+
+        # add font size options
+        self.menu_font_size.addAction(QFontAction('Small',
+            10, self))
+        self.menu_font_size.addAction(QFontAction('Medium',
+            12, self))
+        self.menu_font_size.addAction(QFontAction('Large',
+            14, self))
 
         self.action_new.triggered[bool].connect(
             lambda: actions.create_new(self))
