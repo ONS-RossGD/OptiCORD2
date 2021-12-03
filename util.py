@@ -3,7 +3,20 @@ from PyQt5.QtGui import QValidator
 from PyQt5.QtCore import QDir, QObject, QTemporaryFile
 from shutil import copyfile
 from PyQt5.QtWidgets import QApplication
+from dataclasses import dataclass
 import os
+
+@dataclass
+class Visualisation:
+    """CORD Visualisation in python friendly format"""
+    name: str
+    data: dict
+    meta: dict
+
+    def save(self, iteration: str):
+        """Saves the visualisation to the TempFile under a given 
+        iteration"""
+        print('writing')
 
 class StandardFormats():
     """Standard formats used across OptiCORD scripts"""

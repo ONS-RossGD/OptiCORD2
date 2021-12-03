@@ -9,7 +9,6 @@ from PyQt5.QtCore import QEvent, QObject, QUrl, Qt, pyqtSignal
 from PyQt5.QtWidgets import  QFileDialog, QListView, QWidget
 from PyQt5.uic import loadUi
 from uuid import uuid4
-from read_data import Visualisation
 from ui.new import NewIteration
 from ui.visualisations import VisualisationList
 from util import StandardFormats, TempFile
@@ -115,8 +114,6 @@ class LoadWidget(QWidget, object):
             self.load_tabs.addTab(self.vis_list,
             " Visualisations ")
         self.vis_list.add_file(file)
-        vis = Visualisation(file)
-        print(vis.data)
 
     def update_info(self) -> None:
         """Update the information box with info of the selected
