@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QAction, QApplication, QDialog, QDialogButtonBox, QM
 from PyQt5.uic import loadUi
 from themes import ThemeRegistry, Theme
 import actions
-import util
+from util import TempFile
 
 class QThemeAction(QAction):
     """A QAction Object for Theme items"""
@@ -87,13 +87,14 @@ class UnsavedChanges(QDialog):
         """Activates the save action, returns accept if save
         is successful, returns reject if not"""
         if actions.save(self):
+            TempFile.delete()
             return super().accept()
         else:
             return super().reject()
 
     def discard(self) -> None:
         """Deletes the temp file then returns accept"""
-        util.TempFile.delete()
+        TempFile.delete()
         return super().accept()
 
 class MainWindow(QMainWindow, object):
@@ -134,5 +135,5 @@ class MainWindow(QMainWindow, object):
             if dlg.exec() != QDialog.Accepted:
                 return a0.ignore()
         else:
-            util.TempFile.delete()
+            TempFile.delete()
         return super().closeEvent(a0)
