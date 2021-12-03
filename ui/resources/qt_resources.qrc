@@ -35,12 +35,14 @@
     <file>dark-blue/down_arrow_disabled.svg</file>
     <file>dark-blue/down_arrow_hover.svg</file>
     <file>dark-blue/explore.svg</file>
+    <file>dark-blue/failed.svg</file>
     <file>dark-blue/file_upload.svg</file>
     <file>dark-blue/hmovetoolbar.svg</file>
     <file>dark-blue/hseptoolbar.svg</file>
     <file>dark-blue/import.svg</file>
     <file>dark-blue/left_arrow.svg</file>
     <file>dark-blue/left_arrow_disabled.svg</file>
+    <file>dark-blue/loading.svg</file>
     <file>dark-blue/message_critical.svg</file>
     <file>dark-blue/message_information.svg</file>
     <file>dark-blue/message_question.svg</file>
@@ -56,6 +58,7 @@
     <file>dark-blue/right_arrow_disabled.svg</file>
     <file>dark-blue/sizegrip.svg</file>
     <file>dark-blue/stylesheet.qss</file>
+    <file>dark-blue/success.svg</file>
     <file>dark-blue/transparent.svg</file>
     <file>dark-blue/undock.svg</file>
     <file>dark-blue/undock_hover.svg</file>
@@ -102,12 +105,14 @@
     <file>dark-green/down_arrow_disabled.svg</file>
     <file>dark-green/down_arrow_hover.svg</file>
     <file>dark-green/explore.svg</file>
+    <file>dark-green/failed.svg</file>
     <file>dark-green/file_upload.svg</file>
     <file>dark-green/hmovetoolbar.svg</file>
     <file>dark-green/hseptoolbar.svg</file>
     <file>dark-green/import.svg</file>
     <file>dark-green/left_arrow.svg</file>
     <file>dark-green/left_arrow_disabled.svg</file>
+    <file>dark-green/loading.svg</file>
     <file>dark-green/message_critical.svg</file>
     <file>dark-green/message_information.svg</file>
     <file>dark-green/message_question.svg</file>
@@ -123,6 +128,7 @@
     <file>dark-green/right_arrow_disabled.svg</file>
     <file>dark-green/sizegrip.svg</file>
     <file>dark-green/stylesheet.qss</file>
+    <file>dark-green/success.svg</file>
     <file>dark-green/transparent.svg</file>
     <file>dark-green/undock.svg</file>
     <file>dark-green/undock_hover.svg</file>
@@ -169,12 +175,14 @@
     <file>dark-purple/down_arrow_disabled.svg</file>
     <file>dark-purple/down_arrow_hover.svg</file>
     <file>dark-purple/explore.svg</file>
+    <file>dark-purple/failed.svg</file>
     <file>dark-purple/file_upload.svg</file>
     <file>dark-purple/hmovetoolbar.svg</file>
     <file>dark-purple/hseptoolbar.svg</file>
     <file>dark-purple/import.svg</file>
     <file>dark-purple/left_arrow.svg</file>
     <file>dark-purple/left_arrow_disabled.svg</file>
+    <file>dark-purple/loading.svg</file>
     <file>dark-purple/message_critical.svg</file>
     <file>dark-purple/message_information.svg</file>
     <file>dark-purple/message_question.svg</file>
@@ -190,6 +198,7 @@
     <file>dark-purple/right_arrow_disabled.svg</file>
     <file>dark-purple/sizegrip.svg</file>
     <file>dark-purple/stylesheet.qss</file>
+    <file>dark-purple/success.svg</file>
     <file>dark-purple/transparent.svg</file>
     <file>dark-purple/undock.svg</file>
     <file>dark-purple/undock_hover.svg</file>
@@ -236,12 +245,14 @@
     <file>light-blue/down_arrow_disabled.svg</file>
     <file>light-blue/down_arrow_hover.svg</file>
     <file>light-blue/explore.svg</file>
+    <file>light-blue/failed.svg</file>
     <file>light-blue/file_upload.svg</file>
     <file>light-blue/hmovetoolbar.svg</file>
     <file>light-blue/hseptoolbar.svg</file>
     <file>light-blue/import.svg</file>
     <file>light-blue/left_arrow.svg</file>
     <file>light-blue/left_arrow_disabled.svg</file>
+    <file>light-blue/loading.svg</file>
     <file>light-blue/message_critical.svg</file>
     <file>light-blue/message_information.svg</file>
     <file>light-blue/message_question.svg</file>
@@ -257,6 +268,7 @@
     <file>light-blue/right_arrow_disabled.svg</file>
     <file>light-blue/sizegrip.svg</file>
     <file>light-blue/stylesheet.qss</file>
+    <file>light-blue/success.svg</file>
     <file>light-blue/transparent.svg</file>
     <file>light-blue/undock.svg</file>
     <file>light-blue/undock_hover.svg</file>
@@ -303,12 +315,14 @@
     <file>light-green/down_arrow_disabled.svg</file>
     <file>light-green/down_arrow_hover.svg</file>
     <file>light-green/explore.svg</file>
+    <file>light-green/failed.svg</file>
     <file>light-green/file_upload.svg</file>
     <file>light-green/hmovetoolbar.svg</file>
     <file>light-green/hseptoolbar.svg</file>
     <file>light-green/import.svg</file>
     <file>light-green/left_arrow.svg</file>
     <file>light-green/left_arrow_disabled.svg</file>
+    <file>light-green/loading.svg</file>
     <file>light-green/message_critical.svg</file>
     <file>light-green/message_information.svg</file>
     <file>light-green/message_question.svg</file>
@@ -324,6 +338,7 @@
     <file>light-green/right_arrow_disabled.svg</file>
     <file>light-green/sizegrip.svg</file>
     <file>light-green/stylesheet.qss</file>
+    <file>light-green/success.svg</file>
     <file>light-green/transparent.svg</file>
     <file>light-green/undock.svg</file>
     <file>light-green/undock_hover.svg</file>
@@ -370,12 +385,14 @@
     <file>light-purple/down_arrow_disabled.svg</file>
     <file>light-purple/down_arrow_hover.svg</file>
     <file>light-purple/explore.svg</file>
+    <file>light-purple/failed.svg</file>
     <file>light-purple/file_upload.svg</file>
     <file>light-purple/hmovetoolbar.svg</file>
     <file>light-purple/hseptoolbar.svg</file>
     <file>light-purple/import.svg</file>
     <file>light-purple/left_arrow.svg</file>
     <file>light-purple/left_arrow_disabled.svg</file>
+    <file>light-purple/loading.svg</file>
     <file>light-purple/message_critical.svg</file>
     <file>light-purple/message_information.svg</file>
     <file>light-purple/message_question.svg</file>
@@ -391,6 +408,7 @@
     <file>light-purple/right_arrow_disabled.svg</file>
     <file>light-purple/sizegrip.svg</file>
     <file>light-purple/stylesheet.qss</file>
+    <file>light-purple/success.svg</file>
     <file>light-purple/transparent.svg</file>
     <file>light-purple/undock.svg</file>
     <file>light-purple/undock_hover.svg</file>

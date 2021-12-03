@@ -2,19 +2,44 @@
 
 from datetime import datetime
 import os
+from PyQt5.QtGui import QDragEnterEvent, QDropEvent
 import pandas as pd
 from typing import List
-from PyQt5.QtCore import QObject
-from PyQt5.QtWidgets import QListView, QWidget
+from PyQt5.QtCore import QEvent, QObject, QUrl, Qt, pyqtSignal
+from PyQt5.QtWidgets import  QFileDialog, QListView, QWidget
 from PyQt5.uic import loadUi
 from uuid import uuid4
+from read_data import Visualisation
 from ui.new import NewIteration
+from ui.visualisations import VisualisationList
 from util import StandardFormats, TempFile
 import h5py
+
+class DragDrop(QWidget):
+    """Widget for drag+drop and click file uploads"""
+
+    def __init__(self, parent: QWidget, file_signal: pyqtSignal) -> None:
+        super(QWidget, self).__init__(parent)
+        # load the vanilla elements from QT Designer file
+        loadUi("./ui/drag_drop.ui", self)
+        self.file_added = file_signal
+        # signals
+        self.browse.clicked.connect(self.browse_dialog)
+
+    def browse_dialog(self):
+        """Opens a File Dialog window for user to select files
+        or folders"""
+        selection = QFileDialog.getOpenFileNames(self,
+            'Select visualisations to add...', '',
+            'CORD Visualisations (*.csv)')
+        # emit each selected file
+        [self.file_added.emit(f) for f in selection[0]]
 
 class LoadWidget(QWidget, object):
     """Welcome page ui. Load's vanilla ui elements from a QT Designer
     .ui file whilst also allowing custom elements to be built on top."""
+    file_added = pyqtSignal(str) # custom signal
+
     def __init__(self, parent: QObject) -> None:
         super(QWidget, self).__init__(parent)
         # load the vanilla elements from QT Designer file
@@ -23,11 +48,75 @@ class LoadWidget(QWidget, object):
         self.refresh_iteration_dropdown()
         # magic line to get styling to work
         self.iteration_dropdown.setView(QListView(self))
-        
+        # setting up tab widget
+        self.drag_drop_tab = DragDrop(self.load_tabs, self.file_added)
+        self.vis_list = VisualisationList(self.drag_drop_tab)
+        self.vis_list.hide() # hide until there are vis's to display
+        self.load_tabs.addTab(self.drag_drop_tab, "Add Files")
+        self.load_tabs.setCurrentWidget(self.drag_drop_tab)
+        self.load_tabs.installEventFilter(self)
+        # signals
         self.new_iteration.clicked.connect(self.create_iteration)
-
         self.iteration_dropdown.currentIndexChanged.connect(
             self.update_info)
+        self.drag_drop_tab.file_added.connect(self.add_file)
+
+    def check_drop(self, urls: List[QUrl]) -> bool:
+        """Check that all given files are local files of 
+        type: .csv"""
+        for url in urls:
+            if not url.isLocalFile():
+                return False
+            if str(url.toLocalFile()).split('.')[-1] != 'csv':
+                return False
+        return True
+
+    def drag_enter(self, event: QDragEnterEvent):
+        """Called when files are dragged into widget"""
+        if event.mimeData().hasUrls():
+            if self.check_drop(event.mimeData().urls()):
+                event.accept()
+            else:
+                event.ignore()
+        else:
+            event.ignore()
+
+    def drop(self, event: QDropEvent):
+        """Called when files are dropped into widget"""
+        event.setDropAction(Qt.CopyAction)
+        event.accept()
+        # emit each file
+        [self.file_added.emit(str(url.toLocalFile())) \
+            for url in event.mimeData().urls()]
+
+    def eventFilter(self, source: QObject, event: QEvent) -> bool:
+        """Event filter to customise events of ui children"""
+        if source is self.load_tabs:
+            if event.type() == QEvent.Type.DragEnter:
+                self.drag_enter(event)
+            if event.type() == QEvent.Type.Drop:
+                self.drop(event)
+        return super().eventFilter(source, event)
+
+    def check_tab_exists(self, tab: str) -> bool:
+        """Check if a tab exists in the tab widget"""
+        tabs = [self.load_tabs.tabText(i) \
+            for i in range(self.load_tabs.count())]
+        if tab in tabs:
+            return True
+        else:
+            return False
+
+    def add_file(self, file: str) -> None:
+        """Create visualisations tab if necessary and pass to 
+        VisualisationList.add_file"""
+        # extra spaces in tab name to avoid ui bug
+        if not self.check_tab_exists(' Visualisations '):
+            self.load_tabs.addTab(self.vis_list,
+            " Visualisations ")
+        self.vis_list.add_file(file)
+        vis = Visualisation(file)
+        print(vis.data)
 
     def update_info(self) -> None:
         """Update the information box with info of the selected
@@ -37,7 +126,10 @@ class LoadWidget(QWidget, object):
         # if waiting for selection use placeholder text and return early
         if selection == 'Select iteration...':
             self.selection_info.setText('')
+            self.load_tabs.setEnabled(False)
             return
+        # enable loading files
+        self.load_tabs.setEnabled(True)
         # create description list
         desc = []
         # get info from file
@@ -50,7 +142,6 @@ class LoadWidget(QWidget, object):
                 f'{iteration.attrs["creation_date"]}')
         # write to info box
         self.selection_info.setText('\n'.join(desc))
-
 
     def get_iterations(self) -> List[str]:
         """Returns a list of iteration names from current change tracker

@@ -69,6 +69,9 @@
        <verstretch>2</verstretch>
       </sizepolicy>
      </property>
+     <property name="focusPolicy">
+      <enum>Qt::NoFocus</enum>
+     </property>
      <property name="readOnly">
       <bool>true</bool>
      </property>
@@ -85,10 +88,13 @@
        <verstretch>1</verstretch>
       </sizepolicy>
      </property>
+     <property name="focusPolicy">
+      <enum>Qt::NoFocus</enum>
+     </property>
     </widget>
    </item>
    <item row="3" column="1" colspan="3">
-    <widget class="QTabWidget" name="tabWidget">
+    <widget class="QTabWidget" name="load_tabs">
      <property name="enabled">
       <bool>false</bool>
      </property>
@@ -98,20 +104,18 @@
        <verstretch>6</verstretch>
       </sizepolicy>
      </property>
+     <property name="acceptDrops">
+      <bool>true</bool>
+     </property>
      <property name="tabPosition">
-      <enum>QTabWidget::South</enum>
+      <enum>QTabWidget::North</enum>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>-1</number>
      </property>
      <property name="tabBarAutoHide">
       <bool>true</bool>
      </property>
-     <widget class="QWidget" name="tab">
-      <attribute name="title">
-       <string>Tab 1</string>
-      </attribute>
-     </widget>
     </widget>
    </item>
   </layout>

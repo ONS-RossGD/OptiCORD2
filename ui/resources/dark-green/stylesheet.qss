@@ -63,7 +63,7 @@ QWidget
 
 QWidget:disabled
 {
-    color: #454545;
+    color: #8a8d8f;
     background-color: #31363b;
 }
 
@@ -267,7 +267,7 @@ QMenuBar
 {
     background-color: #1d2023;
     color: #eff0f1;
-    font: 12pt 'Arial';
+    font: 12pt 'Segoe UI';
     border-bottom: 1px solid #33b833;
 }
 
@@ -300,7 +300,7 @@ QMenu
 {
     color: #eff0f1;
     margin: 0.09em;
-    font: 12pt 'Arial';
+    font: 12pt 'Segoe UI';
 }
 
 QMenu::icon
@@ -414,7 +414,7 @@ QLineEdit
     border: 0.04em solid #76797c;
     border-radius: 0.09em;
     color: #eff0f1;
-    font: 12pt 'Arial';
+    font: 12pt 'Segoe UI';
 }
 
 QAbstractScrollArea
@@ -605,7 +605,7 @@ QTextEdit
     background-color: #1d2023;
     color: #eff0f1;
     border: 0.04em solid #76797c;
-    font: 12pt 'Arial';
+    font: 12pt 'Segoe UI';
 }
 
 QPlainTextEdit
@@ -614,6 +614,7 @@ QPlainTextEdit
     color: #eff0f1;
     border-radius: 0.09em;
     border: 0.04em solid #76797c;
+    font: 12pt 'Segoe UI';
 }
 
 QSizeGrip
@@ -738,7 +739,7 @@ QPushButton
     border-radius: 0.09em;
     outline: none;
     min-height: 1.1em;
-    font: 12pt 'Arial';
+    font: 12pt 'Segoe UI';
 }
 
 QComboBox:open,
@@ -766,7 +767,7 @@ QPushButton:disabled
     padding-left: 1ex;
     padding-right: 1ex;
     border-radius: 0.04em;
-    color: #454545;
+    color: #8a8d8f;
 }
 
 QPushButton:focus
@@ -788,7 +789,7 @@ QComboBox
     border-radius: 0.09em;
     padding: 0.23em;
     min-width: 2.5em;
-    font: 12pt 'Arial';
+    font: 12pt 'Segoe UI';
 }
 
 QComboBox:editable
@@ -859,7 +860,7 @@ QComboBox QAbstractItemView
     selection-background-color: #2b992b;
     outline-color: 0em;
     border-radius: 0.09em;
-    font: 12pt 'Arial';
+    font: 12pt 'Segoe UI';
 }
 
 QComboBox::drop-down
@@ -1056,6 +1057,7 @@ QTabBar
      *  do not deleted this comment.
      */
     selection-color: transparent;
+    font: 12pt 'Segoe UI';
 }
 
 QTabBar:focus
@@ -1395,6 +1397,8 @@ QListView
 {
     background-color: #1d2023;
     border: 0em solid black;
+    font: 12pt 'Segoe UI';
+    outline: 0;
 }
 
 QTreeView:selected,
@@ -1467,14 +1471,13 @@ QTreeView::branch:open:has-children:has-siblings:hover
 QListView
 {
     /* Give space for elements aligned left or right. */
-    padding: 0.2em;
+    padding: 0.13em;
 }
 
 QTableView::item,
 QListView::item,
 QTreeView::item
 {
-    padding: 0.13em;
     color: #eff0f1;
 }
 
@@ -1483,7 +1486,6 @@ QListView::item:!selected:hover,
 QTreeView::item:!selected:hover
 {
     background-color: rgba(63, 232, 63, 0.1);
-    outline: 0;
     color: #eff0f1;
     padding: 0.13em;
 }
@@ -2014,6 +2016,7 @@ QLabel#active_expand{
     margin: 10px;
 }
 
-QLabel#info_text{
-    font: 12pt 'Arial';
+QLabel#info_text,
+QLabel#info_text_2{
+    font: 12pt 'Segoe UI';
 }
