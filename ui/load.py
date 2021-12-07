@@ -51,7 +51,8 @@ class LoadWidget(QWidget, object):
         self.drag_drop_tab = DragDrop(self.load_tabs, self.file_added)
         self.vis_list = VisualisationList(self.drag_drop_tab)
         self.vis_list.hide() # hide until there are vis's to display
-        self.load_tabs.addTab(self.drag_drop_tab, "Add Files")
+        # extra spaces in tab name to avoid ui bug
+        self.load_tabs.addTab(self.drag_drop_tab, " Add Files ")
         self.load_tabs.setCurrentWidget(self.drag_drop_tab)
         self.load_tabs.installEventFilter(self)
         # signals
@@ -113,6 +114,8 @@ class LoadWidget(QWidget, object):
         if not self.check_tab_exists(' Visualisations '):
             self.load_tabs.addTab(self.vis_list,
             " Visualisations ")
+            self.load_tabs.setCurrentWidget(self.vis_list)
+            self.load_tabs.tabBar().moveTab(0, 1)
         self.vis_list.add_file(file)
 
     def update_info(self) -> None:

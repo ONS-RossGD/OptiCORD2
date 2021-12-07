@@ -4,55 +4,26 @@ from typing import List
 import warnings
 from PyQt5.Qt import QSvgRenderer
 from PyQt5.QtCore import QEvent, QModelIndex, QObject, QPoint, QRectF, QRunnable, QSettings, QThreadPool, Qt, pyqtSignal, pyqtSlot
-from PyQt5.QtGui import QFontMetrics, QPainter, QPixmap, QStandardItem, QStandardItemModel
+from PyQt5.QtGui import QFont, QFontMetrics, QPainter, QPixmap, QStandardItem, QStandardItemModel
 from PyQt5.QtWidgets import QAbstractItemView, QAction, QListView, QMenu, QStyleOptionViewItem, QStyledItemDelegate, QWidget
 import numpy as np
 import pandas as pd
-from validation import InvalidVisualisation, validate_date, validate_filepath, validate_meta
-
-class VisualisationSignals(QObject):
-    """Signals for VisualisationWorkers, must be in it's
-    own QObject class as QRunnable doesn't support signals"""
-    update_tooltip = pyqtSignal(str)
-    update_name = pyqtSignal(str)
-
-class VisualisationWorker(QRunnable):
-    """A QRunnable object to handle reading visualisation files"""
-    item: QStandardItem
-
-    def __init__(self, filepath: str):
-        super(QRunnable, self).__init__()
-        self.signals = VisualisationSignals()
-        self.filepath = filepath
-        self.item = VisualisationFile(filepath)
-        self.item.state = VisualisationFile.QUEUED
-        self.signals.update_tooltip.connect(lambda tip: 
-            self.item.update_tooltip(tip))
-        self.signals.update_name.connect(lambda text: 
-            self.item.update_text(text))
-    
-    def run(self):
-        """Attempts to read the csv as a visualisation"""
-        self.item.state = VisualisationFile.LOADING
-        try:
-            parser = VisualisationParser()
-            name, data, meta = parser.parse(self.filepath)
-            self.signals.update_name.emit(name)
-            self.item.state = VisualisationFile.SUCCESS
-        except InvalidVisualisation as e:
-            self.signals.update_tooltip.emit(e.full)
-            self.item.state = VisualisationFile.FAILURE
+from validation import InvalidVisualisation, validate_date, validate_filepath, validate_meta, validate_unique
 
 class VisualisationList(QListView):
     """ListWidget for loaded visualisations"""
     pool: QThreadPool
+    existing: List[str]
 
     def __init__(self, parent: QWidget) -> None:
         super(QListView, self).__init__(parent)
         # init the threadpool
         self.pool = QThreadPool()
+        # init existing list
+        self.existing = []
         # ListView setup
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.setObjectName('load_vis_list')
         # event filter to add right click menu
         self.installEventFilter(self)
         # init the custom model
@@ -82,11 +53,21 @@ class VisualisationList(QListView):
         """Add the file to the pool and execute when thread is
         available"""
         # create a new worker for the file
-        worker = VisualisationWorker(file)
+        worker = VisualisationWorker(file, self)
         # add item to the list
         self.custom_model.appendRow(worker.item)
-        # add worker to the pool and execute when thread is available
-        self.pool.start(worker)
+        # check filepath of the worker, must be done before threading
+        # otherwise non-unique visualisations will still pass 
+        # validation when run in parallel
+        if worker.check_filepath():
+            # add worker to the pool and execute when thread is available
+            self.pool.start(worker)
+    
+    @pyqtSlot(str)
+    def add_to_existing(self, vis: str) -> None:
+        """Adds a visualisation to the list of existing 
+        visualisations"""
+        self.existing.append(vis)
 
 class VisListModel(QStandardItemModel):
     """Custom model for VisualisationList Widget"""
@@ -104,11 +85,13 @@ class VisualisationFile(QStandardItem):
     FAILURE = 3
     filepath: str # full filepath of the csv
     state: int # state of the file
+    msg: str # additional messages to be displayed in line
     #visualisation: Visualisation # visualisation data
 
     def __init__(self, filepath: str) -> None:
         self.filepath = filepath
         self.state = self.QUEUED
+        self.msg = ''
         super(QStandardItem, self).__init__(filepath.split('/')[-1])
 
     @pyqtSlot(str)
@@ -122,6 +105,12 @@ class VisualisationFile(QStandardItem):
         """pyqtSlot to update item text accessible to operations
         in other threads"""
         self.setText(text)
+
+    @pyqtSlot(str)
+    def update_msg(self, msg: str) -> None:
+        """pyqtSlot to update item message accessible to operations
+        in other threads"""
+        self.msg = msg
 
 class VisualisationDeligate(QStyledItemDelegate):
     """Item deligate for setting progress icons"""
@@ -160,13 +149,16 @@ class VisualisationDeligate(QStyledItemDelegate):
         # get bounding box of list items text
         font_metrics = QFontMetrics(option.font)
         rect = font_metrics.boundingRect(index.data())
+        message_width = option.rect.width()-(rect.right()+30)
+        message_bounds = QRectF(rect.right()+10+option.rect.height(),
+                option.rect.top(), message_width, option.rect.height())
         # if loading or queued render the loading animation
         if item.state in [VisualisationFile.QUEUED,
             VisualisationFile.LOADING]:
-            bounds = QRectF(rect.right()+10, option.rect.top()+2,
+            icon_bounds = QRectF(rect.right()+10, option.rect.top()+2,
             option.rect.height()-4, option.rect.height()-4)
-            self.loading.render(painter, bounds)
-        # otherwise just paint the success/failure icon
+            self.loading.render(painter, icon_bounds)
+        # otherwise just paint the success/failure icon and message
         else:
             if item.state == VisualisationFile.SUCCESS:
                 pixmap = self.success.scaled(option.rect.height()-4,
@@ -176,32 +168,46 @@ class VisualisationDeligate(QStyledItemDelegate):
                 pixmap = self.failed.scaled(option.rect.height()-4,
                     option.rect.height()-4,
                     Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                # create elided text for error message
+                fail_text = font_metrics.elidedText(item.msg,
+                    Qt.ElideRight, message_width)
+                # set custom font to make message italic
+                italic = QFont('Segoe UI', painter.font().pointSize())
+                italic.setItalic(True)
+                painter.setFont(italic)
+                # draw message in custom bounds
+                painter.drawText(message_bounds, Qt.AlignVCenter, fail_text)
             painter.drawPixmap(QPoint(rect.right()+10,
                 option.rect.top()+2), pixmap)
 
 class VisualisationParser():
     """A parser to read a CORD visualisation csv into
     an OptiCORD python Visualisation"""
-    filepath: str
-    name: str
-    info: dict
-    data: dict
-    meta: dict
-
-    def parse(self, filepath: str) -> tuple:
-        """Attempt to parse csv from filepath as an
-        OptiCORD Visualisation
-        Requires the filepath of the csv to be parsed.
-        Returns;
-            name: name of the visualisation as string
-            data: data contained within visualisation as
-                a dict with periodicities as a kay
-            meta: metadata of the visualisation as a dict"""
+    filepath: str # full filepath of visualisation file
+    name: str # visualisation name
+    info: dict # info dict used by various functions
+    data: dict # data dict to hold visualisation data
+    meta: dict # meta dict to hold visualisation metadata
+    
+    def __init__(self, filepath: str, 
+        vis_list: VisualisationList) -> None:
         self.filepath = filepath
+        self.vis_list = vis_list
+
+    def check_filepath(self) -> None:
+        """Checks a given filepath is of correct format
+        for a CORD visualisation and unique in th vis_list.
+        Assigns the visualisation name if it is."""
         # validate the filepath is of correct format
         validate_filepath(self.filepath)
         # assign the name
         self.name = self._determine_name()
+        # validate visualisation is unique
+        validate_unique(self.name, self.vis_list.existing)
+
+    def parse(self,) -> None:
+        """Attempt to parse csv from filepath as an
+        OptiCORD Visualisation"""
         # create info through a preliminary read
         self._prelim_read()
         # determine if file has been modified
@@ -212,7 +218,6 @@ class VisualisationParser():
         self._read_meta()
         # create the data dict
         self._create_data()
-        return self.name, self.data, self.meta
 
     def _determine_modified(self):
         """Determines whether or not a csv file has been opened and saved
@@ -391,3 +396,60 @@ class VisualisationParser():
         # stop ignoring any parser warnings
         warnings.simplefilter(action='default', 
             category=pd.errors.ParserWarning)
+
+class VisualisationSignals(QObject):
+    """Signals for VisualisationWorkers, must be in it's
+    own QObject class as QRunnable doesn't support signals"""
+    update_tooltip = pyqtSignal(str)
+    update_name = pyqtSignal(str)
+    update_msg = pyqtSignal(str)
+
+class VisualisationWorker(QRunnable):
+    """A QRunnable object to handle reading visualisation files"""
+    item: VisualisationFile
+    parser: VisualisationParser
+
+    def __init__(self, filepath: str,
+        vis_list: VisualisationList):
+        super(QRunnable, self).__init__()
+        self.signals = VisualisationSignals()
+        self.filepath = filepath
+        self.vis_list = vis_list
+        self.item = VisualisationFile(filepath)
+        self.parser = VisualisationParser(filepath, vis_list)
+        self.item.state = VisualisationFile.QUEUED
+        self.signals.update_tooltip.connect(lambda tip: 
+            self.item.update_tooltip(tip))
+        self.signals.update_name.connect(lambda text: 
+            self.item.update_text(text))
+        self.signals.update_name.connect(lambda name: 
+            self.vis_list.add_to_existing(name))
+        self.signals.update_msg.connect(lambda msg: 
+            self.item.update_msg(msg))
+
+    def check_filepath(self) -> bool:
+        """Checks the filepath of the passed file looks
+        valid. Returns the visualisation name.
+        Returns True if filepath is valid, False if not."""
+        try:
+            # validate the filepath
+            self.parser.check_filepath()
+            # update name of visualisation if it's valid
+            self.signals.update_name.emit(self.parser.name)
+            return True
+        except InvalidVisualisation as e:
+            self.signals.update_tooltip.emit(e.full)
+            self.signals.update_msg.emit(e.short)
+            self.item.state = VisualisationFile.FAILURE
+            return False
+    
+    def run(self):
+        """Attempts to read the csv as a visualisation"""
+        self.item.state = VisualisationFile.LOADING
+        try:
+            self.parser.parse()
+            self.item.state = VisualisationFile.SUCCESS
+        except InvalidVisualisation as e:
+            self.signals.update_tooltip.emit(e.full)
+            self.signals.update_msg.emit(e.short)
+            self.item.state = VisualisationFile.FAILURE

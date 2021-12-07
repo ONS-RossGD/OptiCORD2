@@ -76,3 +76,13 @@ def validate_meta(key: str, regex: str, meta_series: pd.Series) -> str:
             if results.group(i+1) != None:
                 match = results.group(i+1)
     return match
+
+def validate_unique(vis: str, existing: str) -> None:
+    """Validate that the passed visualisation 'vis' is the only 
+    visualisation of its kind in the the list of existing 
+    visualisations 'vis_list'"""
+    if vis in existing:
+        raise InvalidVisualisation(f'There is already a "{vis}" '
+        'visualisation in this iteration. Delete the existing '
+        'version in order to overwrite it.', 
+        'Visualisation already exists in iteration')

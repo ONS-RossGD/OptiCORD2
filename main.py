@@ -9,8 +9,8 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QIcon
 from actions import attempt_recovery
 from ui import mainwindow, welcome
-from ui.resources import resource_init
-from util import TempFile # looks redundant but isn't
+from ui.resources import resource_init # looks redundant but isn't
+from util import TempFile
 
 def main():
     """Main loop"""
@@ -19,7 +19,6 @@ def main():
     app.setApplicationName("OptiCORD")
     app.setOrganizationName("ONS")
     app.setOrganizationDomain("ons.gov.uk")
-    # app.setFont(QFont('Arial', 14))
     # TODO python hack to set task bar icon, may not be needed in exe
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(\
         f'ONS.OptiCORD.{__version__}')
