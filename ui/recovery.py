@@ -22,7 +22,9 @@ class RecoveryPopup(QDialog, object):
         self.icon_label.setPixmap(self.pixmap.scaled(
             60, 60, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         
+        TempFile.manager.lockForRead()
         with h5py.File(TempFile.recovery_path, 'r+') as store:
             name = store.attrs['name']
+        TempFile.manager.unlock()
 
         self.details_text.setText(f'Recovered Change: {name}')

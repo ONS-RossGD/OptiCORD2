@@ -17,6 +17,7 @@ def create_new(parent: QObject) -> None:
         return # return if user closes dialog without meeting accept criteria
     TempFile.create_new() # init the temp file for future editing
     # write attributes to the new file and init groups
+    TempFile.manager.lockForWrite()
     with h5py.File(TempFile.path, 'r+') as store:
         store.attrs['name'] = new_dialog.name
         store.attrs['description'] = new_dialog.desc
@@ -26,6 +27,7 @@ def create_new(parent: QObject) -> None:
         store.attrs['id'] = uuid4().hex
         store.create_group('iterations')
         store.create_group('comparisons')
+    TempFile.manager.unlock()
     # redirect to activity window
     parent.window().setCentralWidget(ActiveWidget(parent.window()))
 
@@ -41,9 +43,11 @@ def open_file(parent: QObject) -> None:
     # init the temp file for future editing
     TempFile.create_from_existing(filepath)
     # read the h5 file
+    TempFile.manager.lockForRead()
     with h5py.File(TempFile.path, 'r+') as store:
         # TODO remove the print
         [print(f'{i}: {j}') for (i,j) in store.attrs.items()]
+    TempFile.manager.unlock()
     # redirect to activity window
     parent.window().setCentralWidget(ActiveWidget(parent.window()))
 

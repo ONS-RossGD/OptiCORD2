@@ -59,6 +59,9 @@ class LoadWidget(QWidget, object):
         self.new_iteration.clicked.connect(self.create_iteration)
         self.iteration_dropdown.currentIndexChanged.connect(
             self.update_info)
+        self.iteration_dropdown.currentIndexChanged.connect(
+            lambda i: self.vis_list.change_iteration(
+                self.iteration_dropdown.itemText(i)))
         self.drag_drop_tab.file_added.connect(self.add_file)
 
     def check_drop(self, urls: List[QUrl]) -> bool:
@@ -133,6 +136,7 @@ class LoadWidget(QWidget, object):
         # create description list
         desc = []
         # get info from file
+        TempFile.manager.lockForRead()
         with h5py.File(TempFile.path, 'r+') as store:
             iteration = store[f'iterations/{selection}']
             desc.append(f'Description: {iteration.attrs["description"]}')
@@ -140,12 +144,14 @@ class LoadWidget(QWidget, object):
             desc.append(f'Created by: {iteration.attrs["creator"]}')
             desc.append('Creation Date: '
                 f'{iteration.attrs["creation_date"]}')
+        TempFile.manager.unlock()
         # write to info box
         self.selection_info.setText('\n'.join(desc))
 
     def get_iterations(self) -> List[str]:
         """Returns a list of iteration names from current change tracker
         file sorted by creation date."""
+        TempFile.manager.lockForRead()
         with h5py.File(TempFile.path, 'r+') as store:
             # store in dataframe for easier sorting
             df = pd.DataFrame(columns=['Name', 'Datetime'])
@@ -156,6 +162,7 @@ class LoadWidget(QWidget, object):
                 store[f'iterations/{x}'].attrs['creation_date'],
                 format=StandardFormats.DATETIME)
                 for x in df['Name'].tolist()]
+        TempFile.manager.unlock()
         # sort by creation date and return as list
         return df.sort_values(by='Datetime')['Name'].tolist()
 
@@ -185,6 +192,7 @@ class LoadWidget(QWidget, object):
         if not new_dlg.exec():
             return
         # create the new iteration in file
+        TempFile.manager.lockForWrite()
         with h5py.File(TempFile.path, 'r+') as store:
             iteration = store['iterations'].create_group(new_dlg.name)
             # generate a unique id for the iteration
@@ -193,5 +201,6 @@ class LoadWidget(QWidget, object):
             iteration.attrs['creator'] = os.getlogin()
             iteration.attrs['creation_date'] = datetime.now().strftime(
                 StandardFormats.DATETIME)
+        TempFile.manager.unlock()
         self.refresh_iteration_dropdown()
         self.iteration_dropdown_select(new_dlg.name)

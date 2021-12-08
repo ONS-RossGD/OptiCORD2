@@ -47,7 +47,7 @@ def validate_date(date: str) -> str:
         found.append('M')
     if len(found) != 1:
         raise InvalidVisualisation(f'The format of the date: "{date}"'
-        ' is not recognised', 'Contains invalid dates')
+        ' is not recognised', 'Invalid date header')
     return found[0]
 
 def validate_meta(key: str, regex: str, meta_series: pd.Series) -> str:

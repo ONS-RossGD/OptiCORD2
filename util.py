@@ -1,33 +1,27 @@
 
+from typing import List
 from PyQt5.QtGui import QValidator
-from PyQt5.QtCore import QDir, QObject, QTemporaryFile
+from PyQt5.QtCore import QDir, QObject, QReadWriteLock, QRunnable, QTemporaryFile, pyqtSignal
 from shutil import copyfile
 from PyQt5.QtWidgets import QApplication
 from dataclasses import dataclass
 import os
-
-@dataclass
-class Visualisation:
-    """CORD Visualisation in python friendly format"""
-    name: str
-    data: dict
-    meta: dict
-
-    def save(self, iteration: str):
-        """Saves the visualisation to the TempFile under a given 
-        iteration"""
-        print('writing')
+import json
+import h5py
+from test_scripts import visualisation_compression_test
+from queue import Queue
 
 class StandardFormats():
     """Standard formats used across OptiCORD scripts"""
     DATETIME = '%d/%m/%Y, %H:%M:%S'
 
-class TempFile():
-    """Class to hold information for the temporary file where
-    changes are made before saving."""
+class TempFile:
+    """Holds information of the temporary file where changes are made
+    before saving."""
     saved_path: str = ''
     recovery_path: str = ''
     path: str = ''
+    manager: QReadWriteLock = QReadWriteLock()
 
     def check_existing() -> bool:
         """Checks for an existing TempFile in case user wants to 
@@ -74,16 +68,56 @@ class TempFile():
     def save_to_location(filepath: str) -> None:
         """Saves the temp file to a specified filepath, overwriting any
         existing files in that path."""
+        TempFile.manager.lockForWrite()
         copyfile(TempFile.path, filepath)
+        TempFile.manager.unlock()
         TempFile.saved_path = filepath
 
     def delete() -> None:
         """Delete's the temp file (if it exists)"""
         if TempFile.path != '':
             os.remove(TempFile.path)
+            
+@dataclass
+class Visualisation:
+    """CORD Visualisation in python friendly format"""
+    name: str
+    data: dict
+    meta: dict
+
+    def save(self, iteration: str) -> None:
+        """Saves the visualisation to the TempFile under a given 
+        iteration"""
+        # safely write to the file using TempFile's manager
+        TempFile.manager.lockForWrite()
+        with h5py.File(TempFile.path, 'r+') as store:
+            iter_group = store[f'iterations/{iteration}']
+            vis_store = iter_group.create_group(self.name)
+            # save the metadata to attributes
+            for key, val in self.meta.items():
+                # unable to store dict as attribute so convert to json
+                if type(val) is dict:
+                    val = json.dumps(val)
+                vis_store.attrs[key] = val
+        # save the visualisation data via pandas
+        for per in self.meta['Periodicities']:
+            # rename the index to numbers as spaces in index names
+            # causes issues in saving/reading from file
+            self.data[per].index.names = range(len(
+                self.meta['Dimensions']))
+            self.data[per].to_hdf(TempFile.path,
+                f'iterations/{iteration}/{self.name}/{per}',
+                mode='a', complib='blosc:zlib', complevel=9,
+                format='fixed')
+            # complibs were benchmarked using the lines below.
+            # blosc:zlib was chosen for its small file size
+            # and speedy execution.
+            # visualisation_compression_test.benchmark(
+            #   f'{self.name}_{per}', self.data[per])
+        TempFile.manager.unlock()
 
 class NameValidator(QValidator):
-    """Custom validator signal that reacts to state updates"""
+    """Custom validator signal that reacts to mode updates"""
     FULL = 0
     PARTIAL = 1
     NONE = 2

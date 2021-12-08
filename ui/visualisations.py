@@ -1,24 +1,28 @@
 
 import re
 from typing import List
+from uuid import uuid4
 import warnings
 from PyQt5.Qt import QSvgRenderer
 from PyQt5.QtCore import QEvent, QModelIndex, QObject, QPoint, QRectF, QRunnable, QSettings, QThreadPool, Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QFont, QFontMetrics, QPainter, QPixmap, QStandardItem, QStandardItemModel
 from PyQt5.QtWidgets import QAbstractItemView, QAction, QListView, QMenu, QStyleOptionViewItem, QStyledItemDelegate, QWidget
+import h5py
 import numpy as np
 import pandas as pd
+from util import TempFile, Visualisation
 from validation import InvalidVisualisation, validate_date, validate_filepath, validate_meta, validate_unique
 
 class VisualisationList(QListView):
     """ListWidget for loaded visualisations"""
     pool: QThreadPool
     existing: List[str]
+    iteration: str
 
     def __init__(self, parent: QWidget) -> None:
         super(QListView, self).__init__(parent)
         # init the threadpool
-        self.pool = QThreadPool()
+        self.pool = QThreadPool.globalInstance()
         # init existing list
         self.existing = []
         # ListView setup
@@ -62,12 +66,32 @@ class VisualisationList(QListView):
         if worker.check_filepath():
             # add worker to the pool and execute when thread is available
             self.pool.start(worker)
+
+    def read_from_file(self) -> None:
+        """Reads visualisations already stored in the file"""
+        TempFile.manager.lockForRead()
+        with h5py.File(TempFile.path, 'r+') as store:
+            k = store[f'iterations/{self.iteration}']
+            [print(f'{i}: {j}') for (i,j) in k.items()]
+        TempFile.manager.unlock()
     
     @pyqtSlot(str)
     def add_to_existing(self, vis: str) -> None:
         """Adds a visualisation to the list of existing 
         visualisations"""
         self.existing.append(vis)
+
+    @pyqtSlot(str)
+    def change_iteration(self, iteration: str) -> None:
+        """Update the Visualisation List to match the active
+        iteration"""
+        if iteration == 'Select iteration...': return
+        self.iteration = iteration
+        # clear the list and existing
+        self.custom_model.removeRows(0, self.custom_model.rowCount())
+        self.existing = []
+        self.read_from_file()
+        print(iteration)
 
 class VisListModel(QStandardItemModel):
     """Custom model for VisualisationList Widget"""
@@ -81,12 +105,11 @@ class VisualisationFile(QStandardItem):
     # states
     QUEUED = 0
     LOADING = 1
-    SUCCESS = 2
-    FAILURE = 3
+    FAILURE = 2
+    SUCCESS = 3
     filepath: str # full filepath of the csv
     state: int # state of the file
     msg: str # additional messages to be displayed in line
-    #visualisation: Visualisation # visualisation data
 
     def __init__(self, filepath: str) -> None:
         self.filepath = filepath
@@ -185,7 +208,7 @@ class VisualisationParser():
     an OptiCORD python Visualisation"""
     filepath: str # full filepath of visualisation file
     name: str # visualisation name
-    info: dict # info dict used by various functions
+    info: dict # info dict used by various internal functions
     data: dict # data dict to hold visualisation data
     meta: dict # meta dict to hold visualisation metadata
     
@@ -200,8 +223,9 @@ class VisualisationParser():
         Assigns the visualisation name if it is."""
         # validate the filepath is of correct format
         validate_filepath(self.filepath)
-        # assign the name
-        self.name = self._determine_name()
+        self.meta = dict() # init the meta dict
+        # assign the name and download time
+        self.name, self.meta['Downloaded'] = self._determine_name()
         # validate visualisation is unique
         validate_unique(self.name, self.vis_list.existing)
 
@@ -249,11 +273,11 @@ class VisualisationParser():
             periods.append(validate_date(date))
         return periods
 
-    def _determine_name(self) -> str:
+    def _determine_name(self) -> tuple:
         """Determines the visualisation name from it's filepath"""
-        results = re.match('(.*?)_\d\d\d\d\d\d_\d\d\d\d\d\d.csv',
+        results = re.match('(.*?)_(\d\d\d\d\d\d_\d\d\d\d\d\d).csv',
             self.filepath.split('/')[-1])
-        return results.group(1)
+        return results.group(1), results.group(2)
 
     def _retrieve_markers(self) -> List[tuple]:
         """Find start and end indices that will later be used to slice
@@ -323,13 +347,12 @@ class VisualisationParser():
         self.info['markers'] = self._retrieve_markers()
         # get the dates for each slice as a list
         self.info['dates'] = self._retrieve_dates()
-        self.info['dimensions'] = self._retrieve_dimensions()
+        self.meta['Dimensions'] = self._retrieve_dimensions()
         # get the periodicities in the order they appear
-        self.info['periodicities'] = self._determine_periodicity()
+        self.meta['Periodicities'] = self._determine_periodicity()
 
     def _read_meta(self):
         """Read the metadata from the top of the visualisation file."""
-        self.meta = dict()
         _, end = self.info['markers'][0]
         # read the csv into a single column
         df = pd.read_csv(self.filepath, encoding='unicode_escape', 
@@ -359,6 +382,7 @@ class VisualisationParser():
             # activate store once "Coverage Descriptors" is found
             if item == "Coverage Descriptors": store = True
         self.meta['Coverage'] = coverage
+        self.meta
 
     def _create_data(self) -> pd.DataFrame:
         """Reads the visualisation in explicit slices to create self.data,
@@ -371,15 +395,23 @@ class VisualisationParser():
             warnings.simplefilter(action='ignore',
                 category=pd.errors.ParserWarning)
         # create a dataframe for each periodicity of data
-        for i, per in enumerate(self.info['periodicities']):
+        for i, per in enumerate(self.meta['Periodicities']):
             # get start and end markers (skipping meta marker with +1)
             start, end = self.info['markers'][i+1]
             start += 2 # +2 to get where data starts
             # create names
-            names = self.info['dimensions'] + self.info['dates'][i]
+            names = self.meta['Dimensions'] + self.info['dates'][i]
             # create dtypes list
-            # catagory type uses far less memory than str type
-            dtype_list = (['category']*len(self.info['dimensions']))+\
+            # catagory type uses far less memory than object type
+            # HOWEVER, category is NotImplemented in pandas to_hdf
+            # unless a table format is used, which significantly
+            # (>10x) increases the read and write times, as well as
+            # using almost the same physical storage space. 
+            # Therefore I've traded larger memory usage for read/write
+            # speed. 
+            # TODO convert the dimension columns to category type
+            # after reading from file to get best of both worlds? 
+            dtype_list = (['object']*len(self.meta['Dimensions']))+\
                 (['float64']*len(self.info['dates'][i]))
             # read the data slice
             df = pd.read_csv(self.filepath,
@@ -388,9 +420,9 @@ class VisualisationParser():
                 names=names, dtype=dict(zip(names, dtype_list)),
                 keep_default_na=False, na_values=['.','NULL',''])
             #forward fill the dimension columns
-            df[self.info['dimensions']] = df[self.info['dimensions']].ffill()
+            df[self.meta['Dimensions']] = df[self.meta['Dimensions']].ffill()
             # set dimension columns as index
-            df.set_index(self.info['dimensions'], inplace=True)
+            df.set_index(self.meta['Dimensions'], inplace=True)
             # store dataset in data dict under the key: periodicity
             self.data[per] = df
         # stop ignoring any parser warnings
@@ -406,6 +438,7 @@ class VisualisationSignals(QObject):
 
 class VisualisationWorker(QRunnable):
     """A QRunnable object to handle reading visualisation files"""
+    task_id: str = uuid4().hex
     item: VisualisationFile
     parser: VisualisationParser
 
@@ -441,13 +474,22 @@ class VisualisationWorker(QRunnable):
             self.signals.update_tooltip.emit(e.full)
             self.signals.update_msg.emit(e.short)
             self.item.state = VisualisationFile.FAILURE
-            return False
+        return False
+
+    @pyqtSlot(str)
+    def finished(self, id: str):
+        if id == self.task_id:
+            self.item.state = VisualisationFile.SUCCESS
+
     
     def run(self):
         """Attempts to read the csv as a visualisation"""
         self.item.state = VisualisationFile.LOADING
         try:
             self.parser.parse()
+            vis = Visualisation(self.parser.name, self.parser.data,
+                self.parser.meta)
+            vis.save(self.vis_list.iteration)
             self.item.state = VisualisationFile.SUCCESS
         except InvalidVisualisation as e:
             self.signals.update_tooltip.emit(e.full)
