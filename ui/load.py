@@ -49,7 +49,7 @@ class LoadWidget(QWidget, object):
         self.iteration_dropdown.setView(QListView(self))
         # setting up tab widget
         self.drag_drop_tab = DragDrop(self.load_tabs, self.file_added)
-        self.vis_list = VisualisationList(self.drag_drop_tab)
+        self.vis_list = VisualisationList(self.load_tabs)
         self.vis_list.hide() # hide until there are vis's to display
         # extra spaces in tab name to avoid ui bug
         self.load_tabs.addTab(self.drag_drop_tab, " Add Files ")
@@ -62,7 +62,7 @@ class LoadWidget(QWidget, object):
         self.iteration_dropdown.currentIndexChanged.connect(
             lambda i: self.vis_list.change_iteration(
                 self.iteration_dropdown.itemText(i)))
-        self.drag_drop_tab.file_added.connect(self.add_file)
+        self.drag_drop_tab.file_added.connect(self.vis_list.add_file)
 
     def check_drop(self, urls: List[QUrl]) -> bool:
         """Check that all given files are local files of 
@@ -101,26 +101,6 @@ class LoadWidget(QWidget, object):
                 self.drop(event)
         return super().eventFilter(source, event)
 
-    def check_tab_exists(self, tab: str) -> bool:
-        """Check if a tab exists in the tab widget"""
-        tabs = [self.load_tabs.tabText(i) \
-            for i in range(self.load_tabs.count())]
-        if tab in tabs:
-            return True
-        else:
-            return False
-
-    def add_file(self, file: str) -> None:
-        """Create visualisations tab if necessary and pass to 
-        VisualisationList.add_file"""
-        # extra spaces in tab name to avoid ui bug
-        if not self.check_tab_exists(' Visualisations '):
-            self.load_tabs.addTab(self.vis_list,
-            " Visualisations ")
-            self.load_tabs.setCurrentWidget(self.vis_list)
-            self.load_tabs.tabBar().moveTab(0, 1)
-        self.vis_list.add_file(file)
-
     def update_info(self) -> None:
         """Update the information box with info of the selected
         iteration"""
@@ -128,8 +108,7 @@ class LoadWidget(QWidget, object):
         selection = self.iteration_dropdown.currentText()
         # if waiting for selection use placeholder text and return early
         if selection == 'Select iteration...':
-            self.selection_info.setText('')
-            self.load_tabs.setEnabled(False)
+            self.reset_load_tabs()
             return
         # enable loading files
         self.load_tabs.setEnabled(True)
@@ -204,3 +183,11 @@ class LoadWidget(QWidget, object):
         TempFile.manager.unlock()
         self.refresh_iteration_dropdown()
         self.iteration_dropdown_select(new_dlg.name)
+
+    def reset_load_tabs(self) -> None:
+        """Resets the load_tabs widget"""
+        self.selection_info.setText('')
+        # remove the visualisation list if in tabs
+        if self.load_tabs.count() > 1:
+            self.load_tabs.removeTab(0)
+        self.load_tabs.setEnabled(False)

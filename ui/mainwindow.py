@@ -129,7 +129,7 @@ class MainWindow(QMainWindow, object):
     def closeEvent(self, a0: QCloseEvent) -> None:
         """Additional checks when user tries to intentionally close
         the window"""
-        if actions.detect_unsaved_changes():
+        if TempFile.manager.changed:
             dlg = UnsavedChanges(self)
             # if user closes the popup or fails to save do not exit
             if dlg.exec() != QDialog.Accepted:

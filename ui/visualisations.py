@@ -1,12 +1,11 @@
 
 import re
 from typing import List
-from uuid import uuid4
 import warnings
 from PyQt5.Qt import QSvgRenderer
 from PyQt5.QtCore import QEvent, QModelIndex, QObject, QPoint, QRectF, QRunnable, QSettings, QThreadPool, Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QFont, QFontMetrics, QPainter, QPixmap, QStandardItem, QStandardItemModel
-from PyQt5.QtWidgets import QAbstractItemView, QAction, QListView, QMenu, QStyleOptionViewItem, QStyledItemDelegate, QWidget
+from PyQt5.QtWidgets import QAbstractItemView, QAction, QListView, QMenu, QStyleOptionViewItem, QStyledItemDelegate, QTabWidget, QWidget
 import h5py
 import numpy as np
 import pandas as pd
@@ -19,12 +18,13 @@ class VisualisationList(QListView):
     existing: List[str]
     iteration: str
 
-    def __init__(self, parent: QWidget) -> None:
+    def __init__(self, parent: QTabWidget) -> None:
         super(QListView, self).__init__(parent)
-        # init the threadpool
+        # get the threadpool
         self.pool = QThreadPool.globalInstance()
         # init existing list
         self.existing = []
+        self.tabs = parent
         # ListView setup
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.setObjectName('load_vis_list')
@@ -53,9 +53,12 @@ class VisualisationList(QListView):
             menu.exec(event.globalPos())
         return super().eventFilter(source, event)
 
+    @pyqtSlot(str)
     def add_file(self, file: str) -> None:
         """Add the file to the pool and execute when thread is
         available"""
+        # make sure visualisation list is showing
+        self.show_in_tabs()
         # create a new worker for the file
         worker = VisualisationWorker(file, self)
         # add item to the list
@@ -68,11 +71,22 @@ class VisualisationList(QListView):
             self.pool.start(worker)
 
     def read_from_file(self) -> None:
-        """Reads visualisations already stored in the file"""
+        """Reads the visualisation names already stored in the 
+        file and adds them to the visualisation list."""
+        # add visualisations from file to the list
         TempFile.manager.lockForRead()
         with h5py.File(TempFile.path, 'r+') as store:
-            k = store[f'iterations/{self.iteration}']
-            [print(f'{i}: {j}') for (i,j) in k.items()]
+            i = store[f'iterations/{self.iteration}']
+            for vis in i.keys():
+                self.existing.append(vis)
+                vis_item = VisualisationFile(vis)
+                vis_item.state = VisualisationFile.SUCCESS
+                self.custom_model.appendRow(vis_item)
+        # make sure visualisation list is shown/hidden
+        if self.existing != []:
+            self.show_in_tabs()
+        else:
+            self.hide_in_tabs()
         TempFile.manager.unlock()
     
     @pyqtSlot(str)
@@ -80,6 +94,19 @@ class VisualisationList(QListView):
         """Adds a visualisation to the list of existing 
         visualisations"""
         self.existing.append(vis)
+    
+    def show_in_tabs(self) -> None:
+        """Shows the Visualisation tab if not already present"""
+        if self.tabs.tabText(0) != ' Visualisations ':
+            self.tabs.addTab(self,
+            " Visualisations ")
+            self.tabs.setCurrentWidget(self)
+            self.tabs.tabBar().moveTab(0, 1)
+
+    def hide_in_tabs(self) -> None:
+        """Shows the Visualisation tab if not already present"""
+        if self.tabs.tabText(0) == ' Visualisations ':
+            self.tabs.removeTab(0)
 
     @pyqtSlot(str)
     def change_iteration(self, iteration: str) -> None:
@@ -91,7 +118,6 @@ class VisualisationList(QListView):
         self.custom_model.removeRows(0, self.custom_model.rowCount())
         self.existing = []
         self.read_from_file()
-        print(iteration)
 
 class VisListModel(QStandardItemModel):
     """Custom model for VisualisationList Widget"""
@@ -229,9 +255,9 @@ class VisualisationParser():
         # validate visualisation is unique
         validate_unique(self.name, self.vis_list.existing)
 
-    def parse(self,) -> None:
+    def parse(self,) -> Visualisation:
         """Attempt to parse csv from filepath as an
-        OptiCORD Visualisation"""
+        OptiCORD Visualisation. Returns a Visualisation."""
         # create info through a preliminary read
         self._prelim_read()
         # determine if file has been modified
@@ -242,6 +268,7 @@ class VisualisationParser():
         self._read_meta()
         # create the data dict
         self._create_data()
+        return Visualisation(self.name, self.data, self.meta)
 
     def _determine_modified(self):
         """Determines whether or not a csv file has been opened and saved
@@ -438,7 +465,6 @@ class VisualisationSignals(QObject):
 
 class VisualisationWorker(QRunnable):
     """A QRunnable object to handle reading visualisation files"""
-    task_id: str = uuid4().hex
     item: VisualisationFile
     parser: VisualisationParser
 
@@ -475,20 +501,12 @@ class VisualisationWorker(QRunnable):
             self.signals.update_msg.emit(e.short)
             self.item.state = VisualisationFile.FAILURE
         return False
-
-    @pyqtSlot(str)
-    def finished(self, id: str):
-        if id == self.task_id:
-            self.item.state = VisualisationFile.SUCCESS
-
     
     def run(self):
         """Attempts to read the csv as a visualisation"""
         self.item.state = VisualisationFile.LOADING
         try:
-            self.parser.parse()
-            vis = Visualisation(self.parser.name, self.parser.data,
-                self.parser.meta)
+            vis = self.parser.parse()
             vis.save(self.vis_list.iteration)
             self.item.state = VisualisationFile.SUCCESS
         except InvalidVisualisation as e:

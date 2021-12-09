@@ -1,7 +1,6 @@
 
-from typing import List
 from PyQt5.QtGui import QValidator
-from PyQt5.QtCore import QDir, QObject, QReadWriteLock, QRunnable, QTemporaryFile, pyqtSignal
+from PyQt5.QtCore import QDir, QObject, QReadWriteLock, QTemporaryFile
 from shutil import copyfile
 from PyQt5.QtWidgets import QApplication
 from dataclasses import dataclass
@@ -9,11 +8,19 @@ import os
 import json
 import h5py
 from test_scripts import visualisation_compression_test
-from queue import Queue
 
 class StandardFormats():
     """Standard formats used across OptiCORD scripts"""
     DATETIME = '%d/%m/%Y, %H:%M:%S'
+
+class FileManager(QReadWriteLock):
+    """QReadWriteLock with additional function to tell if file
+    has been written to."""
+    changed: bool = False
+
+    def lockForWrite(self) -> None:
+        self.changed = True
+        return super().lockForWrite()
 
 class TempFile:
     """Holds information of the temporary file where changes are made
@@ -21,7 +28,7 @@ class TempFile:
     saved_path: str = ''
     recovery_path: str = ''
     path: str = ''
-    manager: QReadWriteLock = QReadWriteLock()
+    manager: FileManager = FileManager()
 
     def check_existing() -> bool:
         """Checks for an existing TempFile in case user wants to 
@@ -81,9 +88,9 @@ class TempFile:
 @dataclass
 class Visualisation:
     """CORD Visualisation in python friendly format"""
-    name: str
-    data: dict
-    meta: dict
+    name: str # name of visualisation
+    data: dict # dict of pandas DataFrames with periodicity as key
+    meta: dict # metadata info about visualisation
 
     def save(self, iteration: str) -> None:
         """Saves the visualisation to the TempFile under a given 

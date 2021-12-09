@@ -79,43 +79,6 @@ def save_as(parent: QObject) -> bool:
     TempFile.save_to_location(path)
     return True
 
-def detect_unsaved_changes() -> bool:
-    """Detects whether a temp file contains changes"""
-    print('detecting changes')
-    # get saved_path from settings
-    saved_path = TempFile.saved_path
-    temp_path = TempFile.path
-
-    print(f'saved: {saved_path}, temp: {temp_path}')
-    
-    if saved_path == '':
-        # if there is no saved or temp file we can assume no changes
-        if temp_path == '':
-            return False
-        # if there is a temp path but no saved path then file is brand new
-        else:
-            return True
-    # if the files are different sizes there are changes
-    if os.path.getsize(temp_path) != os.path.getsize(saved_path):
-        return True
-    with open(saved_path, 'rb') as saved,\
-        open(temp_path, 'rb') as temp:
-        # compare the files byte by byte
-        print('comparing files')
-        # read the first byte of each file
-        saved_byte = saved.read(1)
-        temp_byte = temp.read(1)
-        # loop over all bytes in the temp file
-        while temp_byte:
-            # return true as soon as a difference is found
-            if temp_byte != saved_byte:
-                return True
-            # read next byte for each file
-            saved_byte = saved.read(1)
-            temp_byte = temp.read(1)
-        # if loop gets passed files are identical
-        return False
-
 def attempt_recovery(parent: QObject) -> None:
     """Attempt recovery of a temp file"""
     recovery_dlg = RecoveryPopup(parent)
