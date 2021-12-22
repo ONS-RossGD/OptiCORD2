@@ -1,13 +1,25 @@
 import os
 from uuid import uuid4
 import h5py
-from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtWidgets import QApplication, QFileDialog
 from PyQt5.QtCore import QObject, QSettings
 from ui.active import ActiveWidget
+from ui.mainwindow import MainWindow
 from ui.new import NewTracker
 from datetime import datetime
 from ui.recovery import RecoveryPopup
 from util import StandardFormats, TempFile
+
+def set_window_title(title: str) -> None:
+    """Sets the title of the Main Window"""
+    # find the main window from the applications top level widgets
+    mw_list = [w for w in QApplication.topLevelWidgets() \
+        if type(w) is MainWindow]
+    # sense check we found the main window correctly
+    if len(mw_list) != 1:
+        raise Exception('Wrong number of MainWindows')
+    mw = mw_list[0]
+    mw.setWindowTitle(f'OptiCORD - Editing Change Tracker: {title}')
 
 def create_new(parent: QObject) -> None:
     """Sets up the NewDialog and creates a new change tracker file
@@ -30,6 +42,7 @@ def create_new(parent: QObject) -> None:
     TempFile.manager.unlock()
     # redirect to activity window
     parent.window().setCentralWidget(ActiveWidget(parent.window()))
+    set_window_title(new_dialog.name)
 
 def open_file(parent: QObject) -> None:
     """Creates an open file dialog window for user to select an existing
@@ -46,10 +59,12 @@ def open_file(parent: QObject) -> None:
     TempFile.manager.lockForRead()
     with h5py.File(TempFile.path, 'r+') as store:
         # TODO remove the print
+        name = store.attrs['name']
         [print(f'{i}: {j}') for (i,j) in store.attrs.items()]
     TempFile.manager.unlock()
     # redirect to activity window
     parent.window().setCentralWidget(ActiveWidget(parent.window()))
+    set_window_title(name)
 
 def save(parent: QObject) -> bool:
     """Saves the temp file to the location a temp file was created 

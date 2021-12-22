@@ -2,11 +2,12 @@
 
 from datetime import datetime
 import os
+import re
 from PyQt5.QtGui import QDragEnterEvent, QDropEvent
 import pandas as pd
 from typing import List
-from PyQt5.QtCore import QEvent, QObject, QUrl, Qt, pyqtSignal
-from PyQt5.QtWidgets import  QFileDialog, QListView, QWidget
+from PyQt5.QtCore import QEvent, QObject, QSettings, QUrl, Qt, pyqtSignal
+from PyQt5.QtWidgets import  QDialog, QFileDialog, QListView, QWidget
 from PyQt5.uic import loadUi
 from uuid import uuid4
 from ui.new import NewIteration
@@ -34,6 +35,66 @@ class DragDrop(QWidget):
         # emit each selected file
         [self.file_added.emit(f) for f in selection[0]]
 
+class ImportExisting(QDialog):
+    """UI window for selecting an iteraration to import for an exisitng
+    OptiCORD Change Tracker."""
+
+    def __init__(self, parent: QWidget, filepath: str) -> None:
+        super(QDialog, self).__init__(parent, Qt.WindowCloseButtonHint)
+        # load the vanilla elements from QT Designer file
+        loadUi("./ui/import_existing.ui", self)
+        self.filepath = filepath
+        self.iter_dict = dict()
+        # read iteration names and descs from file
+        with h5py.File(filepath, 'r') as store:
+            for name, item in store['iterations'].items():
+                desc = []
+                desc.append(f'Description: {item.attrs["description"]}')
+                desc.append('')
+                desc.append(f'Created by: {item.attrs["creator"]}')
+                desc.append('Creation Date: '
+                    f'{item.attrs["creation_date"]}')
+                self.iter_dict[name] = '\n'.join(desc)
+        # add iterations to the list widget
+        [self.list.addItem(i) for i in self.iter_dict.keys()]
+        #signals
+        self.list.itemClicked.connect(self.update_desc)
+        self.import_button.clicked.connect(self.import_action)
+
+    def update_desc(self) -> None:
+        """Update the description box with the relevant description"""
+        if not self.import_button.isEnabled():
+            self.import_button.setEnabled(True)
+        self.desc.setText(self.iter_dict[self.list.currentItem().text()])
+    
+    def import_action(self) -> None:
+        """"""
+        TempFile.manager.lockForWrite()
+        iter_text = self.list.currentItem().text()
+        path = f'iterations/{iter_text}'
+        with h5py.File(self.filepath, 'r') as source,\
+            h5py.File(TempFile.path, 'r+') as destination:
+            # rename the iteration if it already exists in destination
+            existing = destination['iterations'].keys()
+            if iter_text in existing:
+                # create compile function for filtering items that match
+                compilation = re.compile(f'^{iter_text} \(\d+\)$')
+                # list of just the integers within the brackets
+                copies_list = [re.match(f'^{iter_text} \((\d+)\)$', match).group(1)\
+                    for match in list(filter(compilation.match, existing))]
+                # if list is empty make the copy number the max + 1
+                if copies_list:
+                    c = int(max(copies_list))+1
+                else:
+                    c = 1
+                name = f'{iter_text} ({c})'
+            else:
+                name = iter_text
+            source.copy(path, destination['iterations'], name=name)
+        TempFile.manager.unlock()
+        self.name = name
+        super().accept()
+
 class LoadWidget(QWidget, object):
     """Welcome page ui. Load's vanilla ui elements from a QT Designer
     .ui file whilst also allowing custom elements to be built on top."""
@@ -57,6 +118,7 @@ class LoadWidget(QWidget, object):
         self.load_tabs.installEventFilter(self)
         # signals
         self.new_iteration.clicked.connect(self.create_iteration)
+        self.import_iteration.clicked.connect(self.import_existing)
         self.iteration_dropdown.currentIndexChanged.connect(
             self.update_info)
         self.iteration_dropdown.currentIndexChanged.connect(
@@ -183,6 +245,17 @@ class LoadWidget(QWidget, object):
         TempFile.manager.unlock()
         self.refresh_iteration_dropdown()
         self.iteration_dropdown_select(new_dlg.name)
+
+    def import_existing(self) -> None:
+        """Create a new iteration from an existing iteration"""
+        filepath, _ = QFileDialog.getOpenFileName(self, 'Open existing...',
+        QSettings().value('last_open_location', ''), '*.opticord')
+        if not filepath:
+            return # return if user closes dialog without selecting a file
+        import_dlg = ImportExisting(self, filepath)
+        if import_dlg.exec():
+            self.refresh_iteration_dropdown()
+            self.iteration_dropdown_select(import_dlg.name)
 
     def reset_load_tabs(self) -> None:
         """Resets the load_tabs widget"""

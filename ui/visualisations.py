@@ -2,15 +2,43 @@
 import re
 from typing import List
 import warnings
+from PyQt5 import QtCore
 from PyQt5.Qt import QSvgRenderer
 from PyQt5.QtCore import QEvent, QModelIndex, QObject, QPoint, QRectF, QRunnable, QSettings, QThreadPool, Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QFont, QFontMetrics, QPainter, QPixmap, QStandardItem, QStandardItemModel
-from PyQt5.QtWidgets import QAbstractItemView, QAction, QListView, QMenu, QStyleOptionViewItem, QStyledItemDelegate, QTabWidget, QWidget
+from PyQt5.QtWidgets import QAbstractItemView, QAction, QApplication, QDialog, QDialogButtonBox, QListView, QMenu, QStyleOptionViewItem, QStyledItemDelegate, QTabWidget
+from PyQt5.uic import loadUi
 import h5py
 import numpy as np
 import pandas as pd
 from util import TempFile, Visualisation
 from validation import InvalidVisualisation, validate_date, validate_filepath, validate_meta, validate_unique
+
+class DeleteConfirmation(QDialog):
+    """Popup window to get confirmation that visualisation is to be 
+    deleted"""
+    def __init__(self, parent: QObject, vis_name: str) -> None:
+        super(QDialog, self).__init__(parent, Qt.WindowTitleHint)
+        loadUi("./ui/confirm_delete.ui", self)
+        self.text_label.setText(self.text_label.text().replace(
+            '{vis_name}', vis_name))
+        # get theme folder
+        theme_folder = QSettings().value("active_theme").folder
+        # create icon pixmap
+        self.pixmap = QPixmap(
+            f'./ui/resources/{theme_folder}/message_warning.svg')
+        # re-scale icon
+        self.icon_label.setPixmap(self.pixmap.scaled(
+            60, 60, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+
+        self._retranslate()
+        QApplication.beep()
+
+    def _retranslate(self) -> None:
+        """creates automatically translated text"""
+        _translate = QtCore.QCoreApplication.translate
+        self.text_label.setText(_translate(self.objectName(),
+            self.text_label.text()))
 
 class VisualisationList(QListView):
     """ListWidget for loaded visualisations"""
@@ -31,9 +59,9 @@ class VisualisationList(QListView):
         # event filter to add right click menu
         self.installEventFilter(self)
         # init the custom model
-        self.custom_model = VisListModel(self)
-        self.custom_model.setHorizontalHeaderLabels(['Visualisation'])
-        self.setModel(self.custom_model)
+        self.model = QStandardItemModel(self)
+        self.model.setHorizontalHeaderLabels(['Visualisation'])
+        self.setModel(self.model)
         # init the custom deligate
         self.deligate = VisualisationDeligate(self)
         self.setItemDelegate(self.deligate)
@@ -44,12 +72,15 @@ class VisualisationList(QListView):
     def eventFilter(self, source: QObject, event: QEvent) -> bool:
         """Custom event filter to manage item right click event"""        
         if event.type() == QEvent.ContextMenu and source is self:
-            item = self.custom_model.item(
+            item = self.model.item(
                 self.currentIndex().row(), 0)
             menu = QMenu()
-            delete = QAction('Delete', menu)
-            menu.addActions([delete])
-            delete.triggered.connect(lambda: print(item.filepath))
+            delete_action = QAction('Delete', menu)
+            available_actions = []
+            if item.state == VisualisationFile.SUCCESS:
+                available_actions.append(delete_action)
+            menu.addActions(available_actions)
+            delete_action.triggered.connect(lambda: self.delete_visualisation(item))
             menu.exec(event.globalPos())
         return super().eventFilter(source, event)
 
@@ -62,7 +93,7 @@ class VisualisationList(QListView):
         # create a new worker for the file
         worker = VisualisationWorker(file, self)
         # add item to the list
-        self.custom_model.appendRow(worker.item)
+        self.model.appendRow(worker.item)
         # check filepath of the worker, must be done before threading
         # otherwise non-unique visualisations will still pass 
         # validation when run in parallel
@@ -81,7 +112,7 @@ class VisualisationList(QListView):
                 self.existing.append(vis)
                 vis_item = VisualisationFile(vis)
                 vis_item.state = VisualisationFile.SUCCESS
-                self.custom_model.appendRow(vis_item)
+                self.model.appendRow(vis_item)
         # make sure visualisation list is shown/hidden
         if self.existing != []:
             self.show_in_tabs()
@@ -115,16 +146,19 @@ class VisualisationList(QListView):
         if iteration == 'Select iteration...': return
         self.iteration = iteration
         # clear the list and existing
-        self.custom_model.removeRows(0, self.custom_model.rowCount())
+        self.model.removeRows(0, self.model.rowCount())
         self.existing = []
-        self.read_from_file()
+        self.read_from_file()            
 
-class VisListModel(QStandardItemModel):
-    """Custom model for VisualisationList Widget"""
-    # TODO redundant?
-    def __init__(self, parent: QWidget) -> None:
-        super(QStandardItemModel, self).__init__(parent)
-
+    def delete_visualisation(self, item: QStandardItem) -> None:
+        """Delete the visualisation from the list and the file"""
+        delete_dlg = DeleteConfirmation(self, item.text())
+        if delete_dlg.exec():
+            TempFile.manager.lockForWrite()
+            with h5py.File(TempFile.path, 'r+') as store:
+                del(store[f'iterations/{self.iteration}/{item.text()}'])
+            TempFile.manager.unlock()
+            self.model.removeRow(self.currentIndex().row())
 
 class VisualisationFile(QStandardItem):
     """Custom QListWidget item for Visualisation files"""
@@ -188,7 +222,7 @@ class VisualisationDeligate(QStyledItemDelegate):
         """Custom painting to put icons to the right"""
         super().paint(painter, option, index)
         # get the VisualisationFile object
-        item = self.list.custom_model.item(index.row(), 0)
+        item = self.list.model.item(index.row(), 0)
         # verify state is recognised
         if item.state not in [VisualisationFile.QUEUED, 
             VisualisationFile.LOADING, VisualisationFile.SUCCESS,
