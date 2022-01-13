@@ -5,6 +5,7 @@ from PyQt5.QtCore import QFile, QSettings, QTextStream
 from PyQt5.QtWidgets import QApplication
 from dataclasses import dataclass, field
 
+
 @dataclass
 class Theme:
     """Object for Themes to be used in QtApplication"""
@@ -19,23 +20,31 @@ class Theme:
         file.open(QFile.ReadOnly | QFile.Text)
         stream = QTextStream(file)
         self.theme = stream.readAll()
-    
+
     def apply(self):
         """Apply the Theme"""
         QSettings().setValue("active_theme", self)
         QApplication.instance().setStyleSheet(self.theme)
 
+
 class ThemeRegistry:
     """A Registry for all available Theme's"""
     themes = []
+
     def __init__(self):
         """Define and add Theme's here"""
-        self.themes.append(Theme("dark-blue", "dark_blue_theme", "Dark (Blue)"))
-        self.themes.append(Theme("dark-green", "dark_green_theme", "Dark (Green)"))
-        self.themes.append(Theme("dark-purple", "dark_purple_theme", "Dark (Purple)"))
-        self.themes.append(Theme("light-blue", "light_blue_theme", "Light (Blue)"))
-        self.themes.append(Theme("light-green", "light_green_theme", "Light (Green)"))
-        self.themes.append(Theme("light-purple", "light_purple_theme", "Light (Purple)"))
+        self.themes.append(
+            Theme("dark-blue", "dark_blue_theme", "Dark (Blue)"))
+        self.themes.append(
+            Theme("dark-green", "dark_green_theme", "Dark (Green)"))
+        self.themes.append(
+            Theme("dark-purple", "dark_purple_theme", "Dark (Purple)"))
+        self.themes.append(
+            Theme("light-blue", "light_blue_theme", "Light (Blue)"))
+        self.themes.append(
+            Theme("light-green", "light_green_theme", "Light (Green)"))
+        self.themes.append(
+            Theme("light-purple", "light_purple_theme", "Light (Purple)"))
 
     def __getitem__(self, i: int) -> Theme:
         """Return a specific Theme if ThemeRegistry()[i] is called"""

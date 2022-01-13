@@ -1,14 +1,14 @@
-
-
 from PyQt5.QtCore import QEvent, QObject, QSettings, Qt
 from PyQt5.QtGui import QCursor, QPixmap
 from PyQt5.QtWidgets import QGroupBox, QWidget
 from PyQt5.uic import loadUi
 import actions
 
+
 class WelcomePage(QWidget, object):
     """Welcome page ui. Load's vanilla ui elements from a QT Designer
     .ui file whilst also allowing custom elements to be built on top."""
+
     def __init__(self, parent: QObject):
         super(QWidget, self).__init__(parent)
         # load the vanilla elements from QT Designer file

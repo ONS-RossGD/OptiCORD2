@@ -9,9 +9,11 @@ import json
 import h5py
 from test_scripts import visualisation_compression_test
 
+
 class StandardFormats():
     """Standard formats used across OptiCORD scripts"""
     DATETIME = '%d/%m/%Y, %H:%M:%S'
+
 
 class FileManager(QReadWriteLock):
     """QReadWriteLock with additional function to tell if file
@@ -21,6 +23,7 @@ class FileManager(QReadWriteLock):
     def lockForWrite(self) -> None:
         self.changed = True
         return super().lockForWrite()
+
 
 class TempFile:
     """Holds information of the temporary file where changes are made
@@ -84,13 +87,14 @@ class TempFile:
         """Delete's the temp file (if it exists)"""
         if TempFile.path != '':
             os.remove(TempFile.path)
-            
+
+
 @dataclass
 class Visualisation:
     """CORD Visualisation in python friendly format"""
-    name: str # name of visualisation
-    data: dict # dict of pandas DataFrames with periodicity as key
-    meta: dict # metadata info about visualisation
+    name: str  # name of visualisation
+    data: dict  # dict of pandas DataFrames with periodicity as key
+    meta: dict  # metadata info about visualisation
 
     def save(self, iteration: str) -> None:
         """Saves the visualisation to the TempFile under a given 
@@ -113,9 +117,9 @@ class Visualisation:
             self.data[per].index.names = range(len(
                 self.meta['Dimensions']))
             self.data[per].to_hdf(TempFile.path,
-                f'iterations/{iteration}/{self.name}/{per}',
-                mode='a', complib='blosc:zlib', complevel=9,
-                format='fixed')
+                                  f'iterations/{iteration}/{self.name}/{per}',
+                                  mode='a', complib='blosc:zlib', complevel=9,
+                                  format='fixed')
             # complibs were benchmarked using the lines below.
             # blosc:zlib was chosen for its small file size
             # and speedy execution.
@@ -123,18 +127,19 @@ class Visualisation:
             #   f'{self.name}_{per}', self.data[per])
         TempFile.manager.unlock()
 
+
 class NameValidator(QValidator):
     """Custom validator signal that reacts to mode updates"""
     FULL = 0
     PARTIAL = 1
     NONE = 2
-    
+
     def __init__(self, parent: QObject, mode: int = NONE):
         QValidator.__init__(self, parent)
         if mode == self.FULL:
-            self.bad_chars = {'\\','/',':','*','?','"','<','>','|'}
+            self.bad_chars = {'\\', '/', ':', '*', '?', '"', '<', '>', '|'}
         elif mode == self.PARTIAL:
-            self.bad_chars = {'\\','/'}
+            self.bad_chars = {'\\', '/'}
         elif mode == self.NONE:
             self.bad_chars = {}
         else:

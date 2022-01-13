@@ -8,7 +8,7 @@ import h5py
 
 class RecoveryPopup(QDialog, object):
     """Dialog window for creating a new iteration."""
-    
+
     def __init__(self, parent: QObject) -> None:
         super(QDialog, self).__init__(parent, Qt.WindowTitleHint)
         # load the vanilla elements from QT Designer file
@@ -21,7 +21,7 @@ class RecoveryPopup(QDialog, object):
         # re-scale icon
         self.icon_label.setPixmap(self.pixmap.scaled(
             60, 60, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        
+
         TempFile.manager.lockForRead()
         with h5py.File(TempFile.recovery_path, 'r+') as store:
             name = store.attrs['name']

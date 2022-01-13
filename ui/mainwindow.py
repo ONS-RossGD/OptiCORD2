@@ -10,8 +10,10 @@ from themes import ThemeRegistry, Theme
 import actions
 from util import TempFile
 
+
 class QThemeAction(QAction):
     """A QAction Object for Theme items"""
+
     def __init__(self, theme: Theme, parent: QObject):
         super(QAction, self).__init__(text=theme.display, parent=parent)
         self.theme = theme
@@ -24,12 +26,14 @@ class QThemeAction(QAction):
     def apply(self):
         """Apply the associated theme to its main window"""
         self.theme.apply()
-        [x.setChecked(False) for x in self.parentWidget()\
+        [x.setChecked(False) for x in self.parentWidget()
             .findChildren(QThemeAction)]
         self.setChecked(True)
 
+
 class QFontAction(QAction):
     """A QAction Object for Theme items"""
+
     def __init__(self, text: str, size: int, parent: QObject):
         super(QAction, self).__init__(parent, text=text)
         self.text = text
@@ -43,18 +47,20 @@ class QFontAction(QAction):
     def apply(self):
         """Apply the selected font size"""
         QSettings().setValue("font", dict({'text': self.text,
-            'size': self.size}))
+                                           'size': self.size}))
         ss = QApplication.instance().styleSheet()
         font = f'font: {self.size}pt'
         new_ss = re.sub('font: (.*?)pt', font, ss)
         QApplication.instance().setStyleSheet(new_ss)
-        [x.setChecked(False) for x in self.parentWidget()\
+        [x.setChecked(False) for x in self.parentWidget()
             .findChildren(QFontAction)]
         self.setChecked(True)
+
 
 class UnsavedChanges(QDialog):
     """Popup window to get direction from user on what to do with
     unsaved changes."""
+
     def __init__(self, parent: QObject) -> None:
         super(QDialog, self).__init__(parent, Qt.WindowTitleHint)
         loadUi("./ui/unsaved_changes.ui", self)
@@ -81,7 +87,7 @@ class UnsavedChanges(QDialog):
         """creates automatically translated text"""
         _translate = QtCore.QCoreApplication.translate
         self.text_label.setText(_translate(self.objectName(),
-            self.text_label.text()))
+                                           self.text_label.text()))
 
     def save(self) -> None:
         """Activates the save action, returns accept if save
@@ -97,25 +103,27 @@ class UnsavedChanges(QDialog):
         TempFile.delete()
         return super().accept()
 
+
 class MainWindow(QMainWindow, object):
     """Main window of application"""
+
     def __init__(self):
         super(QMainWindow, self).__init__()
         loadUi("./ui/mainwindow.ui", self)
-        self.themes = ThemeRegistry() # load all themes
+        self.themes = ThemeRegistry()  # load all themes
         # apply the users selected theme defaulted to dark purple
         QSettings().value("active_theme", self.themes[2]).apply()
-        # fill the themes menu 
+        # fill the themes menu
         for theme in self.themes:
             self.menu_theme.addAction(QThemeAction(theme, self))
 
         # add font size options
         self.menu_font_size.addAction(QFontAction('Small',
-            10, self))
+                                                  10, self))
         self.menu_font_size.addAction(QFontAction('Medium',
-            12, self))
+                                                  12, self))
         self.menu_font_size.addAction(QFontAction('Large',
-            14, self))
+                                                  14, self))
 
         self.action_new.triggered[bool].connect(
             lambda: actions.create_new(self))

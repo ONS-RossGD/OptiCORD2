@@ -3,13 +3,16 @@ import os
 import re
 import pandas as pd
 
+
 class InvalidVisualisation(Exception):
     """Raised when an file is tried to be read as a visualisation
     but does not meet some validation requirement"""
+
     def __init__(self, full, short) -> None:
         super().__init__(full)
         self.full = full
         self.short = short
+
 
 def validate_filepath(filepath: str) -> None:
     """Validates that the filepath is of expected CORD format"""
@@ -20,10 +23,11 @@ def validate_filepath(filepath: str) -> None:
             'File is not a csv')
     visualisation_name = filepath.split('/')[-1]
     if not re.search('(.*?_\d\d\d\d\d\d_\d\d\d\d\d\d.csv)',
-        visualisation_name):
+                     visualisation_name):
         raise InvalidVisualisation(f'Filename "{visualisation_name}" '
-        'is not in the format of a downloaded CORD visualisation',
-        'Invalid filename')
+                                   'is not in the format of a downloaded CORD visualisation',
+                                   'Invalid filename')
+
 
 def validate_columns(df: pd.DataFrame) -> None:
     """Sense check that we captured all columns and no 
@@ -32,8 +36,9 @@ def validate_columns(df: pd.DataFrame) -> None:
     dropped = len(df.dropna(axis='columns', how='all').columns.tolist())
     if base != dropped:
         raise InvalidVisualisation(f'Visualisation was read with {base}'
-            f' columns but only {dropped} have data',
-            'File format error')
+                                   f' columns but only {dropped} have data',
+                                   'File format error')
+
 
 def validate_date(date: str) -> str:
     """"""
@@ -47,8 +52,9 @@ def validate_date(date: str) -> str:
         found.append('M')
     if len(found) != 1:
         raise InvalidVisualisation(f'The format of the date: "{date}"'
-        ' is not recognised', 'Invalid date header')
+                                   ' is not recognised', 'Invalid date header')
     return found[0]
+
 
 def validate_meta(key: str, regex: str, meta_series: pd.Series) -> str:
     """Validates that a metadata object can be found with a single
@@ -62,20 +68,22 @@ def validate_meta(key: str, regex: str, meta_series: pd.Series) -> str:
         otherwise raises Exception"""
     for text in meta_series:
         results = re.match(regex, text)
-        if results: break # break once results are found
+        if results:
+            break  # break once results are found
     # raise error if no match is found
     if not results:
         raise InvalidVisualisation('Unable to match metadata for: '
-            f'"{key}" in "{meta_series.tolist()}"',
-            'Missing metadata')
+                                   f'"{key}" in "{meta_series.tolist()}"',
+                                   'Missing metadata')
     # if there's just a single match return the only group
     if len(results.groups()) == 1:
         match = results.group(1)
-    else: # otherwise return the first group which isn't None
+    else:  # otherwise return the first group which isn't None
         for i in range(len(results.groups())):
             if results.group(i+1) != None:
                 match = results.group(i+1)
     return match
+
 
 def validate_unique(vis: str, existing: str) -> None:
     """Validate that the passed visualisation 'vis' is the only 
@@ -83,6 +91,6 @@ def validate_unique(vis: str, existing: str) -> None:
     visualisations 'vis_list'"""
     if vis in existing:
         raise InvalidVisualisation(f'There is already a "{vis}" '
-        'visualisation in this iteration. Delete the existing '
-        'version in order to overwrite it.', 
-        'Visualisation already exists in iteration')
+                                   'visualisation in this iteration. Delete the existing '
+                                   'version in order to overwrite it.',
+                                   'Visualisation already exists in iteration')
