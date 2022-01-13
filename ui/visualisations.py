@@ -76,11 +76,17 @@ class VisualisationList(QListView):
                 self.currentIndex().row(), 0)
             menu = QMenu()
             delete_action = QAction('Delete', menu)
+            dismiss_action = QAction('Dismiss', menu)
             available_actions = []
             if item.state == VisualisationFile.SUCCESS:
                 available_actions.append(delete_action)
+            if item.state == VisualisationFile.FAILURE:
+                available_actions.append(dismiss_action)
             menu.addActions(available_actions)
-            delete_action.triggered.connect(lambda: self.delete_visualisation(item))
+            delete_action.triggered.connect(lambda: 
+                self.delete_visualisation(item))
+            dismiss_action.triggered.connect(lambda: 
+                self.model.removeRow(self.currentIndex().row()))
             menu.exec(event.globalPos())
         return super().eventFilter(source, event)
 
@@ -125,6 +131,11 @@ class VisualisationList(QListView):
         """Adds a visualisation to the list of existing 
         visualisations"""
         self.existing.append(vis)
+
+    def remove_existing(self, vis: str) -> None:
+        """Removes a visualisation from the list of existing 
+        visualisations"""
+        self.existing.remove(vis)
     
     def show_in_tabs(self) -> None:
         """Shows the Visualisation tab if not already present"""
@@ -158,6 +169,7 @@ class VisualisationList(QListView):
             with h5py.File(TempFile.path, 'r+') as store:
                 del(store[f'iterations/{self.iteration}/{item.text()}'])
             TempFile.manager.unlock()
+            self.remove_existing(item.text())
             self.model.removeRow(self.currentIndex().row())
 
 class VisualisationFile(QStandardItem):

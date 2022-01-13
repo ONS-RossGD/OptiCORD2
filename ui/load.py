@@ -68,7 +68,9 @@ class ImportExisting(QDialog):
         self.desc.setText(self.iter_dict[self.list.currentItem().text()])
     
     def import_action(self) -> None:
-        """"""
+        """Called when the import button is clicked. Copies the selected
+        iteration to current working file and screens the iteration
+        name to ensure it's unique."""
         TempFile.manager.lockForWrite()
         iter_text = self.list.currentItem().text()
         path = f'iterations/{iter_text}'
