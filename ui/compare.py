@@ -10,6 +10,14 @@ import pandas as pd
 from util import StandardFormats, TempFile, Switch
 
 
+class SelectAllItem(QStandardItem):
+    """Returns a select all item for the ComparisonList"""
+
+    def __init__(self) -> None:
+        super(QStandardItem, self).__init__("(Select All)")
+        self.setCheckable(True)
+
+
 class ComparisonList(QListView):
     """ListWidget for visualisation comparisons"""
 
@@ -28,9 +36,6 @@ class ComparisonList(QListView):
         # update viewport when svg render frame changes
         self.deligate.loading.repaintNeeded.connect(
             self.viewport().update)
-        # init select all button
-        self.select_all = QStandardItem("(Select All)")
-        self.select_all.setCheckable(True)
 
     @pyqtSlot(QStandardItem)
     def select_all_check(self, item):
@@ -74,9 +79,9 @@ class ComparisonList(QListView):
                pre: List[str], post: List[str]) -> None:
         """Creates/Overwrites the visualisation list with the given
         visualisation lists"""
-        # clear the list
-        self.model.removeRows(0, self.model.rowCount())
+        self.clear()
         # fill list with new items
+        self.select_all = SelectAllItem()
         self.model.appendRow(self.select_all)
         for v in common:
             i = ComparisonItem(v, False)
@@ -93,6 +98,10 @@ class ComparisonList(QListView):
         for i in [self.model.item(i) for i in range(self.model.rowCount())
                   if self.model.item(i).isCheckable()]:
             i.setCheckState(2)
+
+    def clear(self) -> None:
+        """Clears the visualisation list"""
+        self.model.removeRows(0, self.model.rowCount())
 
 
 class ComparisonItem(QStandardItem):
@@ -368,6 +377,9 @@ class CompareWidget(QWidget, object):
                 event.type() == QEvent.MouseButtonPress:
             # get the iterations
             iterations = self.get_iterations()
+            # get the current selection
+            old_pre = self.pre_dropdown.currentText()
+            old_post = self.post_dropdown.currentText()
             # temporarily stop signals from firing
             self.pre_dropdown.blockSignals(True)
             self.post_dropdown.blockSignals(True)
@@ -386,6 +398,14 @@ class CompareWidget(QWidget, object):
                 self.post_dropdown.clear()
                 self.post_dropdown.addItems(
                     ['Select post-change iteration...']+iterations)
+            pre_matching = self.pre_dropdown.findText(
+                old_pre, Qt.MatchFixedString)
+            post_matching = self.post_dropdown.findText(
+                old_post, Qt.MatchFixedString)
+            if pre_matching >= 0:
+                self.pre_dropdown.setCurrentIndex(pre_matching)
+            if post_matching >= 0:
+                self.post_dropdown.setCurrentIndex(post_matching)
             # resume signals
             self.pre_dropdown.blockSignals(False)
             self.post_dropdown.blockSignals(False)
@@ -413,31 +433,21 @@ class CompareWidget(QWidget, object):
         """Manages the enabling/disabling of the name and description edits
         depending on the ui state."""
 
-        def fill_default_values() -> None:
-            pre = self.pre_dropdown.currentText()
-            post = self.post_dropdown.currentText()
-            # self.name_edit.setText(f'{pre} vs. {post}')
-            self.desc_edit.setPlaceholderText(
-                f'Ask user "{os.getlogin()}" for more details.')
-
         def enable_edits() -> None:
-            # self.name_edit.setEnabled(True)
             self.desc_edit.setEnabled(True)
 
         def disable_edits() -> None:
-            # self.name_edit.setEnabled(False)
             self.desc_edit.setEnabled(False)
-            # self.name_edit.setText('')
             self.desc_edit.setPlaceholderText('Comparison description...')
 
         if self.pre_dropdown.currentText() != 'Select pre-change iteration...' \
             and self.post_dropdown.currentText() != \
                 'Select post-change iteration...':
             enable_edits()
-            fill_default_values()
             self.load_visualisations()
         else:
             disable_edits()
+            self.comp_list.clear()
 
     def load_visualisations(self):
         """Loads all visualisations from selected iterations into
