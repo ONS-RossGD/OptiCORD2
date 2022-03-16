@@ -2020,3 +2020,82 @@ QLabel#info_text,
 QLabel#info_text_2{
     font: 12pt 'Segoe UI';
 }
+
+QDateEdit{
+    font: 12pt 'Segoe UI';
+}
+
+OptionsTree::item:disabled{
+    color: #787876
+}
+
+OptionsTree::branch:has-siblings
+{
+    border-image: none;
+    image: none;
+}
+
+/* These branch indicators don't scale */
+TreeView::branch:!has-siblings
+{
+    border-image: none;
+    image: none;
+}
+
+OptionsTree::branch:has-siblings:adjoins-item
+{
+    border-image: none;
+}
+
+OptionsTree::branch:!has-children:!has-siblings:adjoins-item
+{
+    border-image: none;
+}
+
+OptionsTree::branch:has-children:!has-siblings:closed,
+OptionsTree::branch:closed:has-children:has-siblings
+{
+    image: url(:/light-purple/branch_closed.svg);
+}
+
+OptionsTree::branch:has-children:!has-siblings:closed:hover,
+OptionsTree::branch:closed:has-children:has-siblings:hover
+{
+    image: url(:/light-purple/branch_closed_hover.svg);
+}
+
+OptionsTree::branch:has-children:!has-siblings:closed,
+OptionsTree::branch:open:has-children:!has-siblings
+{
+    border-image: none;
+}
+
+OptionsTree::branch:closed:has-children:has-siblings,
+OptionsTree::branch:open:has-children:has-siblings
+{
+    border-image: none;
+}
+
+OptionsTree::branch:open:has-children:!has-siblings,
+OptionsTree::branch:open:has-children:has-siblings
+{
+    image: url(:/light-purple/branch_open.svg);
+}
+
+OptionsTree::branch:open:has-children:!has-siblings:hover,
+OptionsTree::branch:open:has-children:has-siblings:hover
+{
+    image: url(:/light-purple/branch_open_hover.svg);
+}
+
+QAbstractItemView#options_tree::item:selected:active
+{
+    background: #eff0f1;
+    color: #31363b;
+}
+
+QAbstractItemView#options_tree::item:selected:hover
+{
+    background: rgba(194, 51, 223, 0.2);
+    color: #31363b;
+}

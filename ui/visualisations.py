@@ -5,7 +5,7 @@ from PyQt5 import QtCore
 from PyQt5.Qt import QSvgRenderer
 from PyQt5.QtCore import QEvent, QModelIndex, QObject, QPoint, QRectF, QRunnable, QSettings, QThreadPool, Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QFont, QFontMetrics, QPainter, QPixmap, QStandardItem, QStandardItemModel
-from PyQt5.QtWidgets import QAbstractItemView, QAction, QApplication, QDialog, QDialogButtonBox, QListView, QMenu, QStyleOptionViewItem, QStyledItemDelegate, QTabWidget
+from PyQt5.QtWidgets import QAbstractItemView, QAction, QApplication, QDialog, QListView, QMenu, QStyleOptionViewItem, QStyledItemDelegate, QTabWidget
 from PyQt5.uic import loadUi
 import h5py
 import numpy as np
