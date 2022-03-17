@@ -36,9 +36,22 @@ class ComparisonList(QListView):
         # update viewport when svg render frame changes
         self.deligate.loading.repaintNeeded.connect(
             self.viewport().update)
+        # connect double click with checkbox
+        self.doubleClicked.connect(lambda i: self.toggle_item_check(i))
+
+    @pyqtSlot(QModelIndex)
+    def toggle_item_check(self, index) -> None:
+        """Checks or unchecks an item given by QModelIndex"""
+        row = index.row()
+        item = self.model.item(row)
+        if item.isCheckable():
+            if item.checkState() == 0 or item.checkState() == 1:
+                item.setCheckState(2)
+            elif item.checkState() == 2:
+                item.setCheckState(0)
 
     @pyqtSlot(QStandardItem)
-    def select_all_check(self, item):
+    def select_all_check(self, item) -> None:
         """Check if the select all item has been toggled. If it has,
     act accordingly."""
         # Temporarily block signals
