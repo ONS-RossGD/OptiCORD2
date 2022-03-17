@@ -37,7 +37,7 @@ class ComparisonList(QListView):
         self.deligate.loading.repaintNeeded.connect(
             self.viewport().update)
         # connect double click with checkbox
-        self.doubleClicked.connect(lambda i: self.toggle_item_check(i))
+        self.doubleClicked.connect(self.toggle_item_check)
 
     @pyqtSlot(QModelIndex)
     def toggle_item_check(self, index) -> None:
