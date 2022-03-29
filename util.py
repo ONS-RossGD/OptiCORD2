@@ -89,42 +89,27 @@ class TempFile:
             os.remove(TempFile.path)
 
 
-@dataclass
-class Visualisation:
-    """CORD Visualisation in python friendly format"""
-    name: str  # name of visualisation
-    data: dict  # dict of pandas DataFrames with periodicity as key
-    meta: dict  # metadata info about visualisation
+class MetaDict(dict):
+    """A dictionary containing a visualisations meta data.
+    Requires:
+        - path: path to the visualisation within the TempFile"""
 
-    def save(self, iteration: str) -> None:
-        """Saves the visualisation to the TempFile under a given 
-        iteration"""
-        # safely write to the file using TempFile's manager
-        TempFile.manager.lockForWrite()
+    def __init__(self, path) -> None:
+        TempFile.manager.lockForRead()
         with h5py.File(TempFile.path, 'r+') as store:
-            iter_group = store[f'iterations/{iteration}']
-            vis_store = iter_group.create_group(self.name)
-            # save the metadata to attributes
-            for key, val in self.meta.items():
-                # unable to store dict as attribute so convert to json
-                if type(val) is dict:
-                    val = json.dumps(val)
-                vis_store.attrs[key] = val
-        # save the visualisation data via pandas
-        for per in self.meta['Periodicities']:
-            # rename the index to numbers as spaces in index names
-            # causes issues in saving/reading from file
-            self.data[per].index.names = range(len(
-                self.meta['Dimensions']))
-            self.data[per].to_hdf(TempFile.path,
-                                  f'iterations/{iteration}/{self.name}/{per}',
-                                  mode='a', complib='blosc:zlib', complevel=9,
-                                  format='fixed')
-            # complibs were benchmarked using the lines below.
-            # blosc:zlib was chosen for its small file size
-            # and speedy execution.
-            # visualisation_compression_test.benchmark(
-            #   f'{self.name}_{per}', self.data[per])
+            i = store[path]
+            for key, val in i.attrs.items():
+                # if val is a string attempt to decode it assuming it's json
+                if type(val) is str:
+                    try:
+                        self[key] = json.loads(val)
+                    except ValueError:
+                        # json will raise a value error if string
+                        # couldn't be converted, in this case just use
+                        # its string value
+                        self[key] = val
+                else:
+                    self[key] = val
         TempFile.manager.unlock()
 
 

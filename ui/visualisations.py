@@ -1,3 +1,4 @@
+import json
 import re
 from typing import List
 import warnings
@@ -10,7 +11,7 @@ from PyQt5.uic import loadUi
 import h5py
 import numpy as np
 import pandas as pd
-from util import TempFile, Visualisation
+from util import TempFile
 from validation import InvalidVisualisation, validate_date, validate_filepath, validate_meta, validate_unique
 
 
@@ -307,7 +308,7 @@ class VisualisationParser():
         # validate visualisation is unique
         validate_unique(self.name, self.vis_list.existing)
 
-    def parse(self,) -> Visualisation:
+    def parse(self) -> None:
         """Attempt to parse csv from filepath as an
         OptiCORD Visualisation. Returns a Visualisation."""
         # create info through a preliminary read
@@ -321,7 +322,37 @@ class VisualisationParser():
         self._read_meta()
         # create the data dict
         self._create_data()
-        return Visualisation(self.name, self.data, self.meta)
+
+    def save(self) -> None:
+        """Saves the visualisation to the TempFile under a given 
+        iteration"""
+        # safely write to the file using TempFile's manager
+        TempFile.manager.lockForWrite()
+        with h5py.File(TempFile.path, 'r+') as store:
+            iter_group = store[f'iterations/{self.vis_list.iteration}']
+            vis_store = iter_group.create_group(self.name)
+            # save the metadata to attributes
+            for key, val in self.meta.items():
+                # unable to store dict as attribute so convert to json
+                if type(val) is dict:
+                    val = json.dumps(val)
+                vis_store.attrs[key] = val
+        # save the visualisation data via pandas
+        for per in self.meta['Periodicities']:
+            # rename the index to numbers as spaces in index names
+            # causes issues in saving/reading from file
+            self.data[per].index.names = range(len(
+                self.meta['Dimensions']))
+            self.data[per].to_hdf(TempFile.path,
+                                  f'iterations/{self.vis_list.iteration}/{self.name}/{per}',
+                                  mode='a', complib='blosc:zlib', complevel=9,
+                                  format='fixed')
+            # complibs were benchmarked using the lines below.
+            # blosc:zlib was chosen for its small file size
+            # and speedy execution.
+            # visualisation_compression_test.benchmark(
+            #   f'{self.name}_{per}', self.data[per])
+        TempFile.manager.unlock()
 
     def _determine_modified(self):
         """Determines whether or not a csv file has been opened and saved
@@ -564,8 +595,8 @@ class VisualisationWorker(QRunnable):
         """Attempts to read the csv as a visualisation"""
         self.item.state = VisualisationFile.LOADING
         try:
-            vis = self.parser.parse()
-            vis.save(self.vis_list.iteration)
+            self.parser.parse()
+            self.parser.save()
             self.item.state = VisualisationFile.SUCCESS
         except InvalidVisualisation as e:
             self.signals.update_tooltip.emit(e.full)
