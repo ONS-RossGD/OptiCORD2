@@ -339,10 +339,11 @@ class VisualisationParser():
                 vis_store.attrs[key] = val
         # save the visualisation data via pandas
         for per in self.meta['Periodicities']:
-            # rename the index to numbers as spaces in index names
-            # causes issues in saving/reading from file
-            self.data[per].index.names = range(len(
-                self.meta['Dimensions']))
+            # format='fixed' is a lot faster to read/write than 'table'
+            # but means that the data cannot be read in parallel.
+            # After testing with dask it took longer to read data in
+            # parallel anyway and 58M obs can be read/written and compared
+            # using pandas so there should be no need to run in parallel.
             self.data[per].to_hdf(TempFile.path,
                                   f'iterations/{self.vis_list.iteration}/{self.name}/{per}',
                                   mode='a', complib='blosc:zlib', complevel=9,
@@ -498,6 +499,18 @@ class VisualisationParser():
         self.meta['Coverage'] = coverage
         self.meta
 
+    def _convert_column_dates(self, per: str,
+                              columns: pd.Series) -> pd.Series:
+        """Convert a given series 'columns' to a datetime series based
+        on periodicity 'per'."""
+        if per == "A":
+            return pd.to_datetime(columns, format="%Y")
+        if per == "Q":
+            return pd.to_datetime(pd.PeriodIndex(
+                columns, freq='Q').to_timestamp())
+        if per == "M":
+            return pd.to_datetime(columns, format="%Y%b")
+
     def _create_data(self) -> pd.DataFrame:
         """Reads the visualisation in explicit slices to create self.data,
         a dict of dataframes with their periods as the keys."""
@@ -516,15 +529,9 @@ class VisualisationParser():
             # create names
             names = self.meta['Dimensions'] + self.info['dates'][i]
             # create dtypes list
-            # catagory type uses far less memory than object type
-            # HOWEVER, category is NotImplemented in pandas to_hdf
-            # unless a table format is used, which significantly
-            # (>10x) increases the read and write times, as well as
-            # using almost the same physical storage space.
-            # Therefore I've traded larger memory usage for read/write
-            # speed.
-            # TODO convert the dimension columns to category type
-            # after reading from file to get best of both worlds?
+            # without compression 'category' type for dimensions uses less
+            # memory, a compressed object however uses less memory than a
+            # compressed category
             dtype_list = (['object']*len(self.meta['Dimensions'])) +\
                 (['float64']*len(self.info['dates'][i]))
             # read the data slice
@@ -537,6 +544,8 @@ class VisualisationParser():
             df[self.meta['Dimensions']] = df[self.meta['Dimensions']].ffill()
             # set dimension columns as index
             df.set_index(self.meta['Dimensions'], inplace=True)
+            # convert the columns to regular python datetime
+            df.columns = self._convert_column_dates(per, df.columns)
             # store dataset in data dict under the key: periodicity
             self.data[per] = df
         # stop ignoring any parser warnings

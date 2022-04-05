@@ -1,4 +1,3 @@
-import os
 from typing import List
 from PyQt5.QtGui import QStandardItem, QStandardItemModel, QPixmap, QPainter, QFont, QFontMetrics
 from PyQt5.uic import loadUi
@@ -7,7 +6,7 @@ from PyQt5.Qt import QSvgRenderer
 from PyQt5.QtWidgets import QAbstractItemView, QListView, QTreeView, QWidget, QStyledItemDelegate, QStyleOptionViewItem, QDateEdit
 import h5py
 import pandas as pd
-from ui.compare_method import ComparisonManager, ComparisonMethods
+from comparison import PandasComparison
 from util import StandardFormats, TempFile, Switch
 
 
@@ -18,45 +17,47 @@ class ComparisonSignals(QObject):
     update_msg = pyqtSignal(str)
 
 
-class ComparisonWorker(QRunnable):
-    """A QRunnable object to handle reading Comparison files"""
-    pre: str  # pre iteration as string
-    post: str  # post iteration as string
-    items: list  # list of ComparisonItems
-
-    def __init__(self, pre: str, post: str, items: list) -> None:
-        super(QRunnable, self).__init__()
-        self.items = items
-        self.pre = pre
-        self.post = post
-        self.cancel = False  # cancel flag
-
-    @pyqtSlot()
-    def cancel(self) -> None:
-        """Cancels the worker at the next convinient spot"""
-        self.cancel = True
-
-    def run(self):
-        """"""
-        for item in self.items:
-            if self.cancel:
-                print("cancelling...")
-                break
-            item.state = ComparisonItem.PROCESSING
-            cm = ComparisonManager(
-                f'iterations/{self.pre}/{item.name}',
-                f'iterations/{self.post}/{item.name}'
-            )
-            cm.compare(ComparisonMethods.PANDAS)
-            item.state = ComparisonItem.SUCCESS
-
-
 class SelectAllItem(QStandardItem):
     """Returns a select all item for the ComparisonList"""
 
     def __init__(self) -> None:
         super(QStandardItem, self).__init__("(Select All)")
         self.setCheckable(True)
+        self.setCheckState(2)
+
+
+class ComparisonItem(QStandardItem):
+    """Custom QListWidget item for comparison items"""
+    # states
+    LONELY = -1
+    QUEUED = 0
+    PROCESSING = 1
+    FAILURE = 2
+    SUCCESS = 3
+    name: str  # name of the visualisation
+    state: int  # state of the item
+    msg: str  # additional messages to be displayed in line
+
+    def __init__(self, name: str, lonely: bool) -> None:
+        super(QStandardItem, self).__init__(name)
+        self.name = name
+        if lonely:
+            self.state = self.LONELY
+            self.setEnabled(False)
+            self.setCheckable(False)
+        else:
+            self.state = self.QUEUED
+            self.setCheckable(True)
+        self.msg = ''
+
+    @pyqtSlot(bool)
+    def update_diffs(self, diffs: bool) -> None:
+        """pyqtSlot to update item message accessible to operations
+        in other threads"""
+        if diffs:
+            self.msg = "Differences found"
+        else:
+            self.msg = "No differences"
 
 
 class ComparisonList(QListView):
@@ -148,10 +149,43 @@ class ComparisonList(QListView):
             i = ComparisonItem(v, True)
             i.msg = f'Missing in "{pre_name}"'
             self.model.appendRow(i)
-        # check all items
-        for i in [self.model.item(i) for i in range(self.model.rowCount())
-                  if self.model.item(i).isCheckable()]:
-            i.setCheckState(2)
+        # check all items and set state
+        existing = self.get_existing(pre_name, post_name)
+        for item in [self.model.item(i) for i in range(1, self.model.rowCount())
+                     if self.model.item(i).isCheckable()]:
+            item.setCheckState(2)
+            if item.name in existing:
+                item.state = ComparisonItem.SUCCESS
+                meta = self.get_meta(f'comparisons/{pre_name} vs {post_name}'
+                                     f'/{item.name}')
+                item.update_diffs(meta['differences'])
+
+    @pyqtSlot(str, str)
+    def get_existing(self, pre_it: str, post_it: str) -> list:
+        """Returns a list of existing comparisons given a pre and post
+        iteration"""
+        existing = []
+        TempFile.manager.lockForRead()
+        with h5py.File(TempFile.path, 'r+') as store:
+            comparison_list = store[f'comparisons'].keys()
+            theoretical_comp = f'{pre_it} vs {post_it}'
+            if theoretical_comp in comparison_list:
+                existing = list(
+                    store[f'comparisons/{theoretical_comp}'].keys())
+        TempFile.manager.unlock()
+        return existing
+
+    @pyqtSlot(str)
+    def get_meta(self, path: str) -> list:
+        """Returns a list of existing comparisons given a pre and post
+        iteration"""
+        meta = dict()
+        TempFile.manager.lockForRead()
+        with h5py.File(TempFile.path, 'r+') as store:
+            for key, val in store[path].attrs.items():
+                meta[key] = val
+        TempFile.manager.unlock()
+        return meta
 
     @pyqtSlot()
     def clear(self) -> None:
@@ -164,31 +198,6 @@ class ComparisonList(QListView):
         select all item"""
         return [self.model.item(i) for i in range(1, self.model.rowCount())
                 if self.model.item(i).checkState() == 2]
-
-
-class ComparisonItem(QStandardItem):
-    """Custom QListWidget item for comparison items"""
-    # states
-    LONELY = -1
-    QUEUED = 0
-    PROCESSING = 1
-    FAILURE = 2
-    SUCCESS = 3
-    name: str  # name of the visualisation
-    state: int  # state of the item
-    msg: str  # additional messages to be displayed in line
-
-    def __init__(self, name: str, lonely: bool) -> None:
-        super(QStandardItem, self).__init__(name)
-        self.name = name
-        if lonely:
-            self.state = self.LONELY
-            self.setEnabled(False)
-            self.setCheckable(False)
-        else:
-            self.state = self.QUEUED
-            self.setCheckable(True)
-        self.msg = ''
 
 
 class ComparisonDeligate(QStyledItemDelegate):
@@ -250,18 +259,18 @@ class ComparisonDeligate(QStyledItemDelegate):
                 pixmap = self.failed.scaled(option.rect.height()-vgap,
                                             option.rect.height()-vgap,
                                             Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                # create elided text for error message
-                fail_text = font_metrics.elidedText(item.msg,
-                                                    Qt.ElideRight, message_width)
-                # set custom font to make message italic
-                italic = QFont('Segoe UI', painter.font().pointSize())
-                italic.setItalic(True)
-                painter.setFont(italic)
-                # draw message in custom bounds
-                painter.drawText(message_bounds, Qt.AlignVCenter, fail_text)
             if item.state != ComparisonItem.QUEUED:
                 painter.drawPixmap(QPoint(rect.right()+hgap,
                                           option.rect.top()+(vgap/2)), pixmap)
+        # set custom font to make message italic
+        italic = QFont('Segoe UI', painter.font().pointSize())
+        italic.setItalic(True)
+        painter.setFont(italic)
+        # create elided text for message
+        msg_text = font_metrics.elidedText(
+            item.msg, Qt.ElideRight, message_width)
+        # draw message in custom bounds
+        painter.drawText(message_bounds, Qt.AlignVCenter, msg_text)
 
 
 class OptionsTree(QTreeView):
@@ -436,7 +445,7 @@ class CompareWidget(QWidget, object):
             self.name_desc_manager)
         self.post_dropdown.currentIndexChanged.connect(
             self.name_desc_manager)
-        self.compare_export.clicked.connect(self.start_comparison)
+        self.compare_export.clicked.connect(self.export_action)
 
     def eventFilter(self, source: QObject, event: QEvent) -> bool:
         """Event filter to customise events of ui children"""
@@ -535,10 +544,57 @@ class CompareWidget(QWidget, object):
                               common, pre_only, post_only)
 
     @pyqtSlot()
+    def export_action(self) -> None:
+        """"""
+        if self.compare_export.text() == 'Compare && Export':
+            self.start_comparison()
+            self.compare_export.setText('Cancel')
+        else:
+            self.cancel()
+            self.compare_export.setText('Compare && Export')
+
+    @pyqtSlot()
     def start_comparison(self) -> None:
         """Starts the comparison"""
-        self.comparison_worker = ComparisonWorker(
-            self.pre_dropdown.currentText(),
-            self.post_dropdown.currentText(),
-            self.comp_list.get_checked_items())
-        QThreadPool.globalInstance().start(self.comparison_worker)
+        self.active_comparisons = []
+        checked_items = self.comp_list.get_checked_items()
+        not_yet_compared = [
+            i for i in checked_items if i.state != ComparisonItem.SUCCESS]
+        for item in not_yet_compared:
+            self.comparison_worker = ComparisonWorker(
+                self.pre_dropdown.currentText(),
+                self.post_dropdown.currentText(),
+                item)
+            QThreadPool.globalInstance().start(self.comparison_worker)
+            self.active_comparisons.append(self.comparison_worker)
+
+    @pyqtSlot()
+    def cancel(self) -> None:
+        """Cancels any active comparisons if they have not yet started."""
+        print(self.active_comparisons)
+        for worker in self.active_comparisons:
+            print(worker.item.name)
+            if QThreadPool.globalInstance().tryTake(worker):
+                print(f'cancelled {worker.item.name}')
+            else:
+                print(f'waiting for {worker.item.name} to finish')
+
+
+class ComparisonWorker(QRunnable):
+    """A QRunnable object to handle reading Comparison files"""
+    pre: str  # pre iteration as string
+    post: str  # post iteration as string
+    item: ComparisonItem  # ComparisonItem to be compared
+
+    def __init__(self, pre: str, post: str, item: ComparisonItem) -> None:
+        super(QRunnable, self).__init__()
+        self.item = item
+        self.pre = pre
+        self.post = post
+
+    def run(self) -> None:
+        """"""
+        self.item.state = ComparisonItem.PROCESSING
+        comp = PandasComparison(self.pre, self.post, self.item)
+        comp.compare()
+        self.item.state = ComparisonItem.SUCCESS

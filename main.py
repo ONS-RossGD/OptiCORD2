@@ -5,12 +5,14 @@ __version__ = '2.0.0'
 
 import sys
 import ctypes
+import warnings
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QIcon
 from actions import attempt_recovery
 from ui import mainwindow, welcome
 from ui.resources import resource_init  # looks redundant but isn't
 from util import TempFile
+from tables import NaturalNameWarning
 
 
 def main():
@@ -23,6 +25,8 @@ def main():
     # TODO python hack to set task bar icon, may not be needed in exe
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
         f'ONS.OptiCORD.{__version__}')
+    # ignore NaturalNameWarnings as this functionality is not used
+    warnings.filterwarnings('ignore', category=NaturalNameWarning)
     mw = mainwindow.MainWindow()  # creates the main window instance
     # set the icon
     mw.setWindowIcon(QIcon('./ui/resources/OptiCORD_icon.png'))
