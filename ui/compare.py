@@ -1,4 +1,5 @@
 from typing import List
+import warnings
 from PyQt5.QtGui import QStandardItem, QStandardItemModel, QPixmap, QPainter, QFont, QFontMetrics
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import QEvent, QObject, QSettings, QModelIndex, QPoint, QRectF, Qt, pyqtSlot, QDate, QRunnable, pyqtSignal, QThreadPool
@@ -6,7 +7,7 @@ from PyQt5.Qt import QSvgRenderer
 from PyQt5.QtWidgets import QAbstractItemView, QListView, QTreeView, QWidget, QStyledItemDelegate, QStyleOptionViewItem, QDateEdit
 import h5py
 import pandas as pd
-from comparison import PandasComparison
+from comparison import InvalidComparison, PandasComparison
 from util import StandardFormats, TempFile, Switch
 
 
@@ -58,6 +59,18 @@ class ComparisonItem(QStandardItem):
             self.msg = "Differences found"
         else:
             self.msg = "No differences"
+
+    @pyqtSlot(str)
+    def update_tooltip(self, tip: str) -> None:
+        """pyqtSlot to update toolTip accessible to operations
+        in other threads"""
+        self.setToolTip(tip)
+
+    @pyqtSlot(str)
+    def update_text(self, text: str) -> None:
+        """pyqtSlot to update item text accessible to operations
+        in other threads"""
+        self.setText(text)
 
 
 class ComparisonList(QListView):
@@ -545,39 +558,69 @@ class CompareWidget(QWidget, object):
 
     @pyqtSlot()
     def export_action(self) -> None:
-        """"""
+        """Starts correct action based on whether or not a comparison
+        is in progress."""
         if self.compare_export.text() == 'Compare && Export':
             self.start_comparison()
-            self.compare_export.setText('Cancel')
         else:
             self.cancel()
-            self.compare_export.setText('Compare && Export')
 
     @pyqtSlot()
     def start_comparison(self) -> None:
-        """Starts the comparison"""
-        self.active_comparisons = []
+        """Starts running ComparisonWorkers for checked list items that
+        have not yet been compared."""
+        self.comparison_register = []
         checked_items = self.comp_list.get_checked_items()
         not_yet_compared = [
             i for i in checked_items if i.state != ComparisonItem.SUCCESS]
+        if not_yet_compared:
+            self.lock()
         for item in not_yet_compared:
             self.comparison_worker = ComparisonWorker(
+                self.comparison_register,
                 self.pre_dropdown.currentText(),
                 self.post_dropdown.currentText(),
                 item)
             QThreadPool.globalInstance().start(self.comparison_worker)
-            self.active_comparisons.append(self.comparison_worker)
+            self.comparison_worker.signals.finished.connect(self.try_unlock)
+
+    @pyqtSlot()
+    def lock(self) -> None:
+        """Locks the UI for comparison"""
+        self.compare_export.setText('Cancel')
+        self.pre_dropdown.setEnabled(False)
+        self.post_dropdown.setEnabled(False)
+        self.options.setEnabled(False)
+
+    @pyqtSlot()
+    def try_unlock(self) -> None:
+        """Checks if to see if the register is empty, if so unlocks"""
+        if self.comparison_register == []:
+            self.unlock()
+
+    @pyqtSlot()
+    def unlock(self) -> None:
+        """Unlocks the UI so another comparison can be made"""
+        self.compare_export.setText('Compare && Export')
+        self.compare_export.setEnabled(True)
+        self.pre_dropdown.setEnabled(True)
+        self.post_dropdown.setEnabled(True)
+        self.options.setEnabled(True)
 
     @pyqtSlot()
     def cancel(self) -> None:
         """Cancels any active comparisons if they have not yet started."""
-        print(self.active_comparisons)
-        for worker in self.active_comparisons:
-            print(worker.item.name)
+        self.compare_export.setEnabled(False)
+        for worker in self.comparison_register:
             if QThreadPool.globalInstance().tryTake(worker):
-                print(f'cancelled {worker.item.name}')
-            else:
-                print(f'waiting for {worker.item.name} to finish')
+                self.comparison_register.remove(worker)
+
+
+class ComparisonSignals(QObject):
+    """"""
+    update_tooltip = pyqtSignal(str)
+    update_msg = pyqtSignal(str)
+    finished = pyqtSignal()
 
 
 class ComparisonWorker(QRunnable):
@@ -586,15 +629,31 @@ class ComparisonWorker(QRunnable):
     post: str  # post iteration as string
     item: ComparisonItem  # ComparisonItem to be compared
 
-    def __init__(self, pre: str, post: str, item: ComparisonItem) -> None:
+    def __init__(self, reg: list, pre: str, post: str,
+                 item: ComparisonItem) -> None:
         super(QRunnable, self).__init__()
+        self.reg = reg
         self.item = item
         self.pre = pre
         self.post = post
+        self.reg.append(self)
+        self.signals = ComparisonSignals()
+        self.signals.update_msg.connect(
+            lambda text: self.item.update_text(text))
+        self.signals.update_tooltip.connect(
+            lambda text: self.item.update_tooltip(text))
 
     def run(self) -> None:
         """"""
-        self.item.state = ComparisonItem.PROCESSING
-        comp = PandasComparison(self.pre, self.post, self.item)
-        comp.compare()
-        self.item.state = ComparisonItem.SUCCESS
+        try:
+            self.item.state = ComparisonItem.PROCESSING
+            comp = PandasComparison(self.pre, self.post, self.item)
+            comp.compare()
+            self.item.state = ComparisonItem.SUCCESS
+        except InvalidComparison as e:
+            self.signals.update_tooltip.emit(e.full)
+            self.signals.update_msg.emit(e.short)
+            self.item.state = ComparisonItem.FAILURE
+        finally:
+            self.reg.remove(self)
+            self.signals.finished.emit()

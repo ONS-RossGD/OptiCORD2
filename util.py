@@ -3,7 +3,6 @@ from PyQt5.QtGui import QValidator, QPainter
 from PyQt5.QtCore import QDir, QObject, QReadWriteLock, QTemporaryFile, QPropertyAnimation, QRectF, QSize, Qt, pyqtProperty
 from shutil import copyfile
 from PyQt5.QtWidgets import QApplication, QAbstractButton, QSizePolicy
-from dataclasses import dataclass
 import os
 import json
 import h5py
