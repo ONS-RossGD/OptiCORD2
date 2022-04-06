@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QApplication, QDialog, QMessageBox, QWidget
 from PyQt5.uic import loadUi
 import os
 
-from util import NameValidator
+from util import CharacterSet, NameValidator
 
 
 class NewTracker(QDialog, object):
@@ -57,8 +57,7 @@ class NewIteration(QDialog, object):
         self.name_edit.textChanged.connect(lambda:
                                            self.reset_invalid_input(self.name_edit))
 
-        self.name_validator = NameValidator(self,
-                                            NameValidator.PARTIAL)
+        self.name_validator = NameValidator(self, CharacterSet.PARTIAL)
         self.name_edit.setValidator(self.name_validator)
 
         self.name_edit.setFocus(True)  # put keyboard cursor on name edit

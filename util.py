@@ -111,23 +111,17 @@ class MetaDict(dict):
                     self[key] = val
         TempFile.manager.unlock()
 
+class CharacterSet:
+    FULL: set = {'\\', '/', ':', '*', '?', '"', '<', '>', '|'}
+    PARTIAL: set = {'\\', '/'}
+
 
 class NameValidator(QValidator):
     """Custom validator signal that reacts to mode updates"""
-    FULL = 0
-    PARTIAL = 1
-    NONE = 2
 
-    def __init__(self, parent: QObject, mode: int = NONE):
+    def __init__(self, parent: QObject, bad_chars: CharacterSet = {}):
         QValidator.__init__(self, parent)
-        if mode == self.FULL:
-            self.bad_chars = {'\\', '/', ':', '*', '?', '"', '<', '>', '|'}
-        elif mode == self.PARTIAL:
-            self.bad_chars = {'\\', '/'}
-        elif mode == self.NONE:
-            self.bad_chars = {}
-        else:
-            raise ValueError("Unknown mode")
+        self.bad_chars = bad_chars
 
     def validate(self, value, pos):
         if len(value) > 0:
