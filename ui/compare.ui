@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>706</width>
-    <height>484</height>
+    <width>1130</width>
+    <height>750</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -25,7 +25,7 @@
       </font>
      </property>
      <property name="text">
-      <string>Comparison Options</string>
+      <string>Export Options</string>
      </property>
     </widget>
    </item>
@@ -60,13 +60,6 @@
      </property>
      <property name="text">
       <string>Visualisation Selection</string>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="2">
-    <widget class="QPushButton" name="compare_export">
-     <property name="text">
-      <string>Compare &amp;&amp; Export</string>
      </property>
     </widget>
    </item>
@@ -193,6 +186,44 @@
       <property name="horizontalSpacing">
        <number>0</number>
       </property>
+     </layout>
+    </widget>
+   </item>
+   <item row="4" column="2">
+    <widget class="QFrame" name="frame">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QHBoxLayout" name="button_layout">
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QPushButton" name="compare_button">
+        <property name="text">
+         <string>Compare</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="export_button">
+        <property name="text">
+         <string>Export</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>

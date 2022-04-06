@@ -1,14 +1,16 @@
+import os
+import time
 from typing import List
-import warnings
+from wsgiref import validate
 from PyQt5.QtGui import QStandardItem, QStandardItemModel, QPixmap, QPainter, QFont, QFontMetrics
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import QEvent, QObject, QSettings, QModelIndex, QPoint, QRectF, Qt, pyqtSlot, QDate, QRunnable, pyqtSignal, QThreadPool
 from PyQt5.Qt import QSvgRenderer
-from PyQt5.QtWidgets import QAbstractItemView, QListView, QTreeView, QWidget, QStyledItemDelegate, QStyleOptionViewItem, QDateEdit
+from PyQt5.QtWidgets import QAbstractItemView, QListView, QTreeView, QWidget, QStyledItemDelegate, QStyleOptionViewItem, QDateEdit, QFileDialog, QMessageBox, QPushButton, QDialog, QApplication
 import h5py
 import pandas as pd
 from comparison import InvalidComparison, PandasComparison
-from util import StandardFormats, TempFile, Switch
+from util import CharacterSet, NameValidator, StandardFormats, TempFile, Switch
 
 
 class ComparisonSignals(QObject):
@@ -39,17 +41,19 @@ class ComparisonItem(QStandardItem):
     state: int  # state of the item
     msg: str  # additional messages to be displayed in line
 
-    def __init__(self, name: str, lonely: bool) -> None:
+    def __init__(self, name: str) -> None:
         super(QStandardItem, self).__init__(name)
         self.name = name
-        if lonely:
-            self.state = self.LONELY
-            self.setEnabled(False)
-            self.setCheckable(False)
-        else:
-            self.state = self.QUEUED
-            self.setCheckable(True)
+        self.state = self.QUEUED
         self.msg = ''
+
+    @pyqtSlot(str)
+    def set_lonely(self, missing_in: str) -> None:
+        """pyqtSlot to set the item as LONELY"""
+        self.state = self.LONELY
+        self.setCheckable(False)
+        self.msg = f'Missing in {missing_in}'
+        self.setEnabled(False)
 
     @pyqtSlot(bool)
     def update_diffs(self, diffs: bool) -> None:
@@ -147,31 +151,33 @@ class ComparisonList(QListView):
                pre: List[str], post: List[str]) -> None:
         """Creates/Overwrites the visualisation list with the given
         visualisation lists"""
-        self.clear()
-        # fill list with new items
-        self.select_all = SelectAllItem()
-        self.model.appendRow(self.select_all)
-        for v in common:
-            i = ComparisonItem(v, False)
-            self.model.appendRow(i)
-        for v in pre:
-            i = ComparisonItem(v, True)
-            i.msg = f'Missing in "{post_name}"'
-            self.model.appendRow(i)
-        for v in post:
-            i = ComparisonItem(v, True)
-            i.msg = f'Missing in "{pre_name}"'
-            self.model.appendRow(i)
         # check all items and set state
         existing = self.get_existing(pre_name, post_name)
-        for item in [self.model.item(i) for i in range(1, self.model.rowCount())
-                     if self.model.item(i).isCheckable()]:
-            item.setCheckState(2)
-            if item.name in existing:
-                item.state = ComparisonItem.SUCCESS
-                meta = self.get_meta(f'comparisons/{pre_name} vs {post_name}'
-                                     f'/{item.name}')
-                item.update_diffs(meta['differences'])
+        # clear list and fill with new items
+        self.clear()
+        self.select_all = SelectAllItem()
+        self.model.appendRow(self.select_all)
+        # loop over every visualisation
+        for vis in common + pre + post:
+            # init the item
+            item = ComparisonItem(vis)
+            if vis in common:
+                item.setCheckable(True)
+                item.setCheckState(2)
+                if item.name in existing:
+                    item.state = ComparisonItem.SUCCESS
+                    meta = self.get_meta(f'comparisons/{pre_name} vs {post_name}'
+                                         f'/{item.name}')
+                    item.update_diffs(meta['differences'])
+            else:
+                item.state = ComparisonItem.LONELY
+                item.setEnabled(False)
+                if vis in pre:
+                    item.msg = f'Missing in {post_name}'
+                if vis in post:
+                    item.msg = f'Missing in {pre_name}'
+            # add item to the list
+            self.model.appendRow(item)
 
     @pyqtSlot(str, str)
     def get_existing(self, pre_it: str, post_it: str) -> list:
@@ -206,11 +212,16 @@ class ComparisonList(QListView):
         self.model.removeRows(0, self.model.rowCount())
 
     @pyqtSlot()
-    def get_checked_items(self) -> list:
-        """Returns a list of the selected ComparisonItems excluding the 
-        select all item"""
-        return [self.model.item(i) for i in range(1, self.model.rowCount())
-                if self.model.item(i).checkState() == 2]
+    def get_checked_items(self) -> pd.DataFrame:
+        """Returns a dataframe with 2 columns: 'Item' and 'State'.
+        'Item' column contains all of the checked ComparisonItem's
+        (excluding the 'Select All' item) and 'State' column contains each
+        item's state."""
+        df = pd.DataFrame()
+        df['Item'] = [self.model.item(i) for i in range(1, self.model.rowCount())
+                      if self.model.item(i).checkState() == 2]
+        df['State'] = [i.state for i in df['Item']]
+        return df
 
 
 class ComparisonDeligate(QStyledItemDelegate):
@@ -307,8 +318,8 @@ class OptionsTree(QTreeView):
         # setup comparison options
         self.options = ComparisonOptions(self)
         self.setup_options()
-        # get max width for container in ComparisonWidget
-        self.maxWidth = self.columnWidth(0) + 150
+        # get fixed width for container in ComparisonWidget
+        self.fixedWidth = self.columnWidth(0) + 150
 
     def setup_options(self) -> None:
         """Where options are managed"""
@@ -433,6 +444,57 @@ class ComparisonOptions():
         placeholder.setEnabled(state)
 
 
+class ExportDialog(QDialog, object):
+    """Dialog window for creating a new change tracker file."""
+    path: str  # path to the export folder
+
+    def __init__(self, parent: QObject, folder: str,
+                 name_guess: str) -> None:
+        super(QDialog, self).__init__(parent, Qt.WindowCloseButtonHint)
+        # load the vanilla elements from QT Designer file
+        loadUi("./ui/export.ui", self)
+        self.folder = folder
+        self.name_guess = name_guess
+        self.name_edit.setText(self.name_guess)
+        self.name_edit.setFocus()
+        self.warning.hide()
+        validator = NameValidator(self, CharacterSet.FULL)
+        self.name_edit.setValidator(validator)
+        self.name_edit.textChanged.connect(
+            lambda: self.reset_invalid_input(self.name_edit))
+
+    def reset_invalid_input(self, w: QWidget) -> None:
+        """Resets the invalid_input property of a given widget"""
+        if w.property("invalid_input") == "true":
+            w.setProperty("invalid_input", "false")
+            # style has to be unpolished and polished to update
+            w.style().unpolish(w)
+            w.style().polish(w)
+        self.warning.hide()
+
+    def validate_name(self) -> bool:
+        """Validates that the entered name is a valid folder name.
+        If it is, the folder is created and returns True. If not udpates
+        the ui and returns False."""
+        if os.path.isdir(self.path):
+            # update property to reflect invalid input
+            self.name_edit.setProperty("invalid_input", "true")
+            # style has to be unpolished and polished to update
+            self.name_edit.style().unpolish(self.name_edit)
+            self.name_edit.style().polish(self.name_edit)
+            self.warning.show()
+            return False
+        else:
+            os.mkdir(self.path)
+            return True
+
+    def accept(self) -> None:
+        self.path = f'{self.folder}/{self.name_edit.text()}'
+        if not self.validate_name():
+            return QApplication.beep()
+        return super().accept()
+
+
 class CompareWidget(QWidget, object):
     """Compare page ui and functionality"""
 
@@ -452,13 +514,17 @@ class CompareWidget(QWidget, object):
         # create options tree
         self.options = OptionsTree(self.options_container)
         self.options_container_layout.addWidget(self.options, 0, 0)
-        self.options_container.setMaximumWidth(self.options.maxWidth)
+        # fix the options container to
+        self.options_container.setMaximumWidth(self.options.fixedWidth)
+        self.options_container.setMinimumWidth(self.options.fixedWidth)
         # signals
         self.pre_dropdown.currentIndexChanged.connect(
             self.name_desc_manager)
         self.post_dropdown.currentIndexChanged.connect(
             self.name_desc_manager)
-        self.compare_export.clicked.connect(self.export_action)
+        self.comp_list.model.itemChanged.connect(self.manage_buttons)
+        self.compare_button.clicked.connect(self.compare_action)
+        self.export_button.clicked.connect(self.export_action)
 
     def eventFilter(self, source: QObject, event: QEvent) -> bool:
         """Event filter to customise events of ui children"""
@@ -550,70 +616,133 @@ class CompareWidget(QWidget, object):
         common = [x for x in post_vis if x in pre_vis]
         pre_only = [x for x in pre_vis if x not in post_vis]
         post_only = [x for x in post_vis if x not in pre_vis]
-        print(
-            f'common: {common}\npre_only: {pre_only}\npost_only: {post_only}')
         self.comp_list.create(self.pre_dropdown.currentText(),
                               self.post_dropdown.currentText(),
                               common, pre_only, post_only)
+        # initally manage buttons
+        self.manage_buttons()
+
+    @pyqtSlot()
+    def manage_buttons(self):
+        """Manages the state (Enabled/Disabled) of the Compare and 
+        Export buttons."""
+        checked_items = self.comp_list.get_checked_items()
+        # if no checked items or items contain a failure, dont allow anything
+        if checked_items.empty or checked_items.eq(
+                ComparisonItem.FAILURE)['State'].any():
+            self.compare_button.setEnabled(False)
+            self.export_button.setEnabled(False)
+        # if all items are already compared, allow export but not compare
+        elif checked_items.eq(ComparisonItem.SUCCESS)['State'].all():
+            self.compare_button.setEnabled(False)
+            self.export_button.setEnabled(True)
+        # otherwise allow compare but not export
+        else:
+            self.compare_button.setEnabled(True)
+            self.export_button.setEnabled(False)
+
+    @pyqtSlot()
+    def compare_action(self) -> None:
+        """Starts correct action based on whether or not a comparison
+        is in progress."""
+        if self.compare_button.text() == 'Compare':
+            checked_items = self.comp_list.get_checked_items()
+            not_compared = checked_items.loc[
+                checked_items['State']
+                != ComparisonItem.SUCCESS, 'Item'].tolist()
+            print(not_compared)
+            if not_compared:
+                self.compare_items(not_compared)
+        else:
+            self.cancel()
 
     @pyqtSlot()
     def export_action(self) -> None:
         """Starts correct action based on whether or not a comparison
         is in progress."""
-        if self.compare_export.text() == 'Compare && Export':
-            self.start_comparison()
+        if self.export_button.text() == 'Export':
+            self.export_path = False
+            folder = self.ask_export()
+            if not folder:
+                QMessageBox.warning(
+                    self,
+                    'Comparisons were not exported',
+                    'You must choose a location for comparison reports'
+                    ' to be exported.')
+                return
+            export_name = ExportDialog(
+                self, folder, f'{self.pre_dropdown.currentText()} vs '
+                f'{self.post_dropdown.currentText()}')
+            if not export_name.exec():
+                QMessageBox.warning(
+                    self,
+                    'Comparisons were not exported',
+                    'You must enter a valid name for the export folder.')
+                return
+            self.export_path = export_name.path
+            print('begin export')
         else:
             self.cancel()
 
-    @pyqtSlot()
-    def start_comparison(self) -> None:
+    def compare_items(self, items: list) -> None:
         """Starts running ComparisonWorkers for checked list items that
         have not yet been compared."""
-        self.comparison_register = []
-        checked_items = self.comp_list.get_checked_items()
-        not_yet_compared = [
-            i for i in checked_items if i.state != ComparisonItem.SUCCESS]
-        if not_yet_compared:
-            self.lock()
-        for item in not_yet_compared:
+        self.register = []
+        self.lock(self.compare_button)
+        for item in items:
             self.comparison_worker = ComparisonWorker(
-                self.comparison_register,
+                self.register,
                 self.pre_dropdown.currentText(),
                 self.post_dropdown.currentText(),
                 item)
             QThreadPool.globalInstance().start(self.comparison_worker)
             self.comparison_worker.signals.finished.connect(self.try_unlock)
 
-    @pyqtSlot()
-    def lock(self) -> None:
+    def lock(self, cancel_button: QPushButton) -> None:
         """Locks the UI for comparison"""
-        self.compare_export.setText('Cancel')
         self.pre_dropdown.setEnabled(False)
         self.post_dropdown.setEnabled(False)
         self.options.setEnabled(False)
+        self.comp_list.setEnabled(False)
+        # disable both buttons
+        self.compare_button.setEnabled(False)
+        self.export_button.setEnabled(False)
+        # re-enable the one controlling cancel operation
+        cancel_button.setEnabled(True)
+        cancel_button.setText('Cancel')
 
     @pyqtSlot()
     def try_unlock(self) -> None:
         """Checks if to see if the register is empty, if so unlocks"""
-        if self.comparison_register == []:
+        if self.register == []:
             self.unlock()
 
-    @pyqtSlot()
     def unlock(self) -> None:
         """Unlocks the UI so another comparison can be made"""
-        self.compare_export.setText('Compare && Export')
-        self.compare_export.setEnabled(True)
+        self.compare_button.setText('Compare')
+        self.compare_button.setEnabled(True)
+        self.export_button.setText('Export')
+        self.export_button.setEnabled(True)
         self.pre_dropdown.setEnabled(True)
         self.post_dropdown.setEnabled(True)
         self.options.setEnabled(True)
+        self.comp_list.setEnabled(True)
+        self.manage_buttons()
 
     @pyqtSlot()
     def cancel(self) -> None:
         """Cancels any active comparisons if they have not yet started."""
-        self.compare_export.setEnabled(False)
-        for worker in self.comparison_register:
+        self.compare_button.setEnabled(False)
+        for worker in self.register:
             if QThreadPool.globalInstance().tryTake(worker):
-                self.comparison_register.remove(worker)
+                self.register.remove(worker)
+
+    def ask_export(self) -> None:
+        """Starts a pop-up for user to choose export folder."""
+        folder = QFileDialog.getExistingDirectory(
+            None, 'Select folder where comparisons will be exported',
+            '', QFileDialog.ShowDirsOnly)
+        return folder
 
 
 class ComparisonSignals(QObject):
