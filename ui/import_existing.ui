@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Select iteration to import</string>
+   <string>Select position to import</string>
   </property>
   <layout class="QGridLayout" name="import_list_layout">
    <property name="leftMargin">
@@ -67,7 +67,7 @@
       <set>Qt::TextSelectableByMouse</set>
      </property>
      <property name="placeholderText">
-      <string>Waiting for iteration to be selected...</string>
+      <string>Waiting for position to be selected...</string>
      </property>
     </widget>
    </item>

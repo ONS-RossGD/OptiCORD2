@@ -39,7 +39,7 @@ def create_new(parent: QObject) -> None:
         store.attrs['creation_date'] = datetime.now().strftime(
             StandardFormats.DATETIME)
         store.attrs['id'] = uuid4().hex
-        store.create_group('iterations')
+        store.create_group('positions')
         store.create_group('comparisons')
     TempFile.manager.unlock()
     # redirect to activity window

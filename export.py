@@ -185,9 +185,9 @@ class Export():
             # post dataframes then check again for differences as they may
             # not have differences within the filtered dates.
             pre = self._read_vis(
-                f'iterations/{self.pre}/{self.item.name}/{per}')
+                f'positions/{self.pre}/{self.item.name}/{per}')
             post = self._read_vis(
-                f'iterations/{self.post}/{self.item.name}/{per}')
+                f'positions/{self.post}/{self.item.name}/{per}')
             post = self._process_vis(post, per)
             pre = self._process_vis(pre, per)
             if self.options.date_filter() and self.options.skip_no_diffs() and \

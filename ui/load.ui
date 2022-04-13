@@ -30,7 +30,7 @@
     <number>10</number>
    </property>
    <item row="1" column="3">
-    <widget class="QPushButton" name="import_iteration">
+    <widget class="QPushButton" name="import_position">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
        <horstretch>1</horstretch>
@@ -38,12 +38,12 @@
       </sizepolicy>
      </property>
      <property name="text">
-      <string>Import Iteration</string>
+      <string>Import Position</string>
      </property>
     </widget>
    </item>
    <item row="1" column="2">
-    <widget class="QPushButton" name="new_iteration">
+    <widget class="QPushButton" name="new_position">
      <property name="sizePolicy">
       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
        <horstretch>1</horstretch>
@@ -51,7 +51,7 @@
       </sizepolicy>
      </property>
      <property name="text">
-      <string>Create New Iteration</string>
+      <string>Create New Position</string>
      </property>
     </widget>
    </item>
@@ -73,12 +73,12 @@
       <bool>true</bool>
      </property>
      <property name="placeholderText">
-      <string>Waiting for iteration to be selected...</string>
+      <string>Waiting for position to be selected...</string>
      </property>
     </widget>
    </item>
    <item row="1" column="1">
-    <widget class="QComboBox" name="iteration_dropdown">
+    <widget class="QComboBox" name="position_dropdown">
      <property name="sizePolicy">
       <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
        <horstretch>2</horstretch>

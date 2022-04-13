@@ -91,6 +91,6 @@ def validate_unique(vis: str, existing: str) -> None:
     visualisations 'vis_list'"""
     if vis in existing:
         raise InvalidVisualisation(f'There is already a "{vis}" '
-                                   'visualisation in this iteration. Delete the existing '
+                                   'visualisation in this position. Delete the existing '
                                    'version in order to overwrite it.',
-                                   'Visualisation already exists in iteration')
+                                   'Visualisation already exists in position')

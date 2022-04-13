@@ -47,7 +47,7 @@ class VisualisationList(QListView):
     """ListWidget for loaded visualisations"""
     pool: QThreadPool
     existing: List[str]
-    iteration: str
+    position: str
 
     def __init__(self, parent: QTabWidget) -> None:
         super(QListView, self).__init__(parent)
@@ -116,7 +116,7 @@ class VisualisationList(QListView):
         # add visualisations from file to the list
         TempFile.manager.lockForRead()
         with h5py.File(TempFile.path, 'r+') as store:
-            i = store[f'iterations/{self.iteration}']
+            i = store[f'positions/{self.position}']
             for vis in i.keys():
                 self.existing.append(vis)
                 vis_item = VisualisationFile(vis)
@@ -154,12 +154,12 @@ class VisualisationList(QListView):
             self.tabs.removeTab(0)
 
     @pyqtSlot(str)
-    def change_iteration(self, iteration: str) -> None:
+    def change_position(self, position: str) -> None:
         """Update the Visualisation List to match the active
-        iteration"""
-        if iteration == 'Select iteration...':
+        position"""
+        if position == 'Select position...':
             return
-        self.iteration = iteration
+        self.position = position
         # clear the list and existing
         self.model.removeRows(0, self.model.rowCount())
         self.existing = []
@@ -171,7 +171,7 @@ class VisualisationList(QListView):
         if delete_dlg.exec():
             TempFile.manager.lockForWrite()
             with h5py.File(TempFile.path, 'r+') as store:
-                del(store[f'iterations/{self.iteration}/{item.text()}'])
+                del(store[f'positions/{self.position}/{item.text()}'])
             TempFile.manager.unlock()
             self.remove_existing(item.text())
             self.model.removeRow(self.currentIndex().row())
@@ -325,11 +325,11 @@ class VisualisationParser():
 
     def save(self) -> None:
         """Saves the visualisation to the TempFile under a given 
-        iteration"""
+        position"""
         # safely write to the file using TempFile's manager
         TempFile.manager.lockForWrite()
         with h5py.File(TempFile.path, 'r+') as store:
-            iter_group = store[f'iterations/{self.vis_list.iteration}']
+            iter_group = store[f'positions/{self.vis_list.position}']
             vis_store = iter_group.create_group(self.name)
             # save the metadata to attributes
             for key, val in self.meta.items():
@@ -345,7 +345,7 @@ class VisualisationParser():
             # parallel anyway and 58M obs can be read/written and compared
             # using pandas so there should be no need to run in parallel.
             self.data[per].to_hdf(TempFile.path,
-                                  f'iterations/{self.vis_list.iteration}/{self.name}/{per}',
+                                  f'positions/{self.vis_list.position}/{self.name}/{per}',
                                   mode='a', complib='blosc:zlib', complevel=9,
                                   format='fixed')
             # complibs were benchmarked using the lines below.

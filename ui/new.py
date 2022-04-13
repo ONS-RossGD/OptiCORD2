@@ -46,13 +46,13 @@ class NewTracker(QDialog, object):
         return super().accept()
 
 
-class NewIteration(QDialog, object):
-    """Dialog window for creating a new iteration."""
+class NewPosition(QDialog, object):
+    """Dialog window for creating a new position."""
 
     def __init__(self, parent: QObject, existing: List[str]) -> None:
         super(QDialog, self).__init__(parent, Qt.WindowTitleHint)
         # load the vanilla elements from QT Designer file
-        loadUi("./ui/new_iteration.ui", self)
+        loadUi("./ui/new_position.ui", self)
         self.existing = existing
         self.name_edit.textChanged.connect(lambda:
                                            self.reset_invalid_input(self.name_edit))
@@ -72,7 +72,7 @@ class NewIteration(QDialog, object):
 
     def accept(self):
         """Overwritten the default accept function to validate
-        criteria needed to create new iteration"""
+        criteria needed to create new position"""
         if not self.name_edit.text() or \
                 self.name_edit.text() in self.existing:
             # update property to reflect invalid input
@@ -83,9 +83,9 @@ class NewIteration(QDialog, object):
             if self.name_edit.text() in self.existing:
                 # return a popup explaining name must be unique
                 return QMessageBox.warning(self,
-                                           'Iteration name already exists',
-                                           'An iteration with that name already exists'
-                                           ' in this change tracker, your new iteration'
+                                           'Position name already exists',
+                                           'An position with that name already exists'
+                                           ' in this change tracker, your new position'
                                            ' must have a unique name.')
             else:
                 return QApplication.beep()  # makes warning noise

@@ -13,14 +13,14 @@ class Comparison(ABC):
     """Abstract base class for all comparisons. Ensures a valid comparison
     can be made no matter the method."""
 
-    def __init__(self, pre_iteration: str, post_iteration: str, item) -> None:
-        self.pre_iteration = pre_iteration
-        self.post_iteration = post_iteration
+    def __init__(self, pre_position: str, post_position: str, item) -> None:
+        self.pre_position = pre_position
+        self.post_position = post_position
         self.item = item
         self.vis = item.name
         self.differences = False
-        self.pre_path = f'iterations/{pre_iteration}/{self.vis}'
-        self.post_path = f'iterations/{post_iteration}/{self.vis}'
+        self.pre_path = f'positions/{pre_position}/{self.vis}'
+        self.post_path = f'positions/{post_position}/{self.vis}'
         self.pre_meta = MetaDict(self.pre_path)
         self.post_meta = MetaDict(self.post_path)
         self.diff_pers = self._check_periodicities()
@@ -80,9 +80,9 @@ class Comparison(ABC):
             self.diff, self.nans = self._calc_difference()
             # check for differences
             self._check_differences()
-            # TODO ensure " vs " cannot be included in iteration name
-            self.save_to_file(f'comparisons/{self.pre_iteration}'
-                              f' vs {self.post_iteration}/{self.vis}/{per}')
+            # TODO ensure " vs " cannot be included in position name
+            self.save_to_file(f'comparisons/{self.pre_position}'
+                              f' vs {self.post_position}/{self.vis}/{per}')
         self.save_metadata()
         self.item.update_diffs(self.differences)
 
@@ -106,8 +106,8 @@ class Comparison(ABC):
         """Saves metadata items for the overall visualisation comparison"""
         TempFile.manager.lockForWrite()
         with h5py.File(TempFile.path, 'r+') as store:
-            comp = store[f'comparisons/{self.pre_iteration}'
-                         f' vs {self.post_iteration}/{self.vis}']
+            comp = store[f'comparisons/{self.pre_position}'
+                         f' vs {self.post_position}/{self.vis}']
             comp.attrs['periodicities'] = self.periodicities
             comp.attrs['differences'] = self.differences
         TempFile.manager.unlock()
@@ -171,15 +171,15 @@ class PandasComparison(Comparison):
         # to set the values of the diff df to the missing series
         # string per where they were missing
         diff_df[missing_rows ==
-                'left_only'] = f'Series not in {self.pre_iteration}'
+                'left_only'] = f'Series not in {self.pre_position}'
         diff_df[missing_rows ==
-                'right_only'] = f'Series not in {self.post_iteration}'
+                'right_only'] = f'Series not in {self.post_position}'
         # Missing dates in pre/post can be filtered by a simple
         # list comprehension and set to the missing date string
         diff_df[[d for d in diff_df.columns if d not in self.pre.columns]
-                ] = f'Date not in {self.pre_iteration}'
+                ] = f'Date not in {self.pre_position}'
         diff_df[[d for d in diff_df.columns if d not in self.post.columns]
-                ] = f'Date not in {self.post_iteration}'
+                ] = f'Date not in {self.post_position}'
         # Set the values of the diff_df where we found missing
         # data in just one of the pre/post dataframes to the
         # relevant missing in pre/post string. This has to be done at
@@ -187,8 +187,8 @@ class PandasComparison(Comparison):
         # TypeError: Cannot do inplace boolean setting on mixed-types
         # with a non np.nan value
         # Not sure how to solve this other than doing this step last
-        diff_df[missing_pre] = f'Missing in {self.pre_iteration}'
-        diff_df[missing_post] = f'Missing in {self.post_iteration}'
+        diff_df[missing_pre] = f'Missing in {self.pre_position}'
+        diff_df[missing_post] = f'Missing in {self.post_position}'
         # Finally we are left with just the nan-nan=nan nans
         # that are not a missing column or row. These should
         # be set to '.' as this is how they are displayed

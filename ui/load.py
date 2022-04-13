@@ -10,7 +10,7 @@ from PyQt5.QtCore import QEvent, QObject, QSettings, QUrl, Qt, pyqtSignal
 from PyQt5.QtWidgets import QDialog, QFileDialog, QListView, QWidget
 from PyQt5.uic import loadUi
 from uuid import uuid4
-from ui.new import NewIteration
+from ui.new import NewPosition
 from ui.visualisations import VisualisationList
 from util import StandardFormats, TempFile
 import h5py
@@ -47,9 +47,9 @@ class ImportExisting(QDialog):
         loadUi("./ui/import_existing.ui", self)
         self.filepath = filepath
         self.iter_dict = dict()
-        # read iteration names and descs from file
+        # read position names and descs from file
         with h5py.File(filepath, 'r') as store:
-            for name, item in store['iterations'].items():
+            for name, item in store['positions'].items():
                 desc = []
                 desc.append(f'Description: {item.attrs["description"]}')
                 desc.append('')
@@ -57,7 +57,7 @@ class ImportExisting(QDialog):
                 desc.append('Creation Date: '
                             f'{item.attrs["creation_date"]}')
                 self.iter_dict[name] = '\n'.join(desc)
-        # add iterations to the list widget
+        # add positions to the list widget
         [self.list.addItem(i) for i in self.iter_dict.keys()]
         # signals
         self.list.itemClicked.connect(self.update_desc)
@@ -71,15 +71,15 @@ class ImportExisting(QDialog):
 
     def import_action(self) -> None:
         """Called when the import button is clicked. Copies the selected
-        iteration to current working file and screens the iteration
+        position to current working file and screens the position
         name to ensure it's unique."""
         TempFile.manager.lockForWrite()
         iter_text = self.list.currentItem().text()
-        path = f'iterations/{iter_text}'
+        path = f'positions/{iter_text}'
         with h5py.File(self.filepath, 'r') as source,\
                 h5py.File(TempFile.path, 'r+') as destination:
-            # rename the iteration if it already exists in destination
-            existing = destination['iterations'].keys()
+            # rename the position if it already exists in destination
+            existing = destination['positions'].keys()
             if iter_text in existing:
                 # create compile function for filtering items that match
                 compilation = re.compile(f'^{iter_text} \(\d+\)$')
@@ -94,13 +94,13 @@ class ImportExisting(QDialog):
                 name = f'{iter_text} ({c})'
             else:
                 name = iter_text
-            source.copy(path, destination['iterations'], name=name)
-            if 'history' in destination[f'iterations/{name}'].attrs.keys():
-                destination[f'iterations/{name}'].attrs['history'] += \
+            source.copy(path, destination['positions'], name=name)
+            if 'history' in destination[f'positions/{name}'].attrs.keys():
+                destination[f'positions/{name}'].attrs['history'] += \
                     f'\n({datetime.now().strftime(StandardFormats.DATETIME)})'\
                     f' - Imported from {source.attrs["name"]} by {os.getlogin()}'
             else:
-                destination[f'iterations/{name}'].attrs['history'] = \
+                destination[f'positions/{name}'].attrs['history'] = \
                     f'({datetime.now().strftime(StandardFormats.DATETIME)})'\
                     f' - Imported from {source.attrs["name"]} by {os.getlogin()}'
         TempFile.manager.unlock()
@@ -117,9 +117,9 @@ class LoadWidget(QWidget, object):
         # load the vanilla elements from QT Designer file
         loadUi("./ui/load.ui", self)
         # fill the dropdown menu
-        self.refresh_iteration_dropdown()
+        self.refresh_position_dropdown()
         # magic line to get styling to work
-        self.iteration_dropdown.setView(QListView(self))
+        self.position_dropdown.setView(QListView(self))
         # setting up tab widget
         self.drag_drop_tab = DragDrop(self.load_tabs, self.file_added)
         self.vis_list = VisualisationList(self.load_tabs)
@@ -129,13 +129,13 @@ class LoadWidget(QWidget, object):
         self.load_tabs.setCurrentWidget(self.drag_drop_tab)
         self.load_tabs.installEventFilter(self)
         # signals
-        self.new_iteration.clicked.connect(self.create_iteration)
-        self.import_iteration.clicked.connect(self.import_existing)
-        self.iteration_dropdown.currentIndexChanged.connect(
+        self.new_position.clicked.connect(self.create_position)
+        self.import_position.clicked.connect(self.import_existing)
+        self.position_dropdown.currentIndexChanged.connect(
             self.update_info)
-        self.iteration_dropdown.currentIndexChanged.connect(
-            lambda i: self.vis_list.change_iteration(
-                self.iteration_dropdown.itemText(i)))
+        self.position_dropdown.currentIndexChanged.connect(
+            lambda i: self.vis_list.change_position(
+                self.position_dropdown.itemText(i)))
         self.drag_drop_tab.file_added.connect(self.vis_list.add_file)
 
     def check_drop(self, urls: List[QUrl]) -> bool:
@@ -177,11 +177,11 @@ class LoadWidget(QWidget, object):
 
     def update_info(self) -> None:
         """Update the information box with info of the selected
-        iteration"""
+        position"""
         # get current seletion
-        selection = self.iteration_dropdown.currentText()
+        selection = self.position_dropdown.currentText()
         # if waiting for selection use placeholder text and return early
-        if selection == 'Select iteration...':
+        if selection == 'Select position...':
             self.reset_load_tabs()
             return
         # enable loading files
@@ -191,85 +191,85 @@ class LoadWidget(QWidget, object):
         # get info from file
         TempFile.manager.lockForRead()
         with h5py.File(TempFile.path, 'r+') as store:
-            iteration = store[f'iterations/{selection}']
-            desc.append(f'Description: {iteration.attrs["description"]}')
+            position = store[f'positions/{selection}']
+            desc.append(f'Description: {position.attrs["description"]}')
             desc.append('')
-            desc.append(f'Created by: {iteration.attrs["creator"]}')
+            desc.append(f'Created by: {position.attrs["creator"]}')
             desc.append('Creation Date: '
-                        f'{iteration.attrs["creation_date"]}')
-            if 'history' in iteration.attrs.keys():
-                desc.append(f'History: {iteration.attrs["history"]}')
+                        f'{position.attrs["creation_date"]}')
+            if 'history' in position.attrs.keys():
+                desc.append(f'History: {position.attrs["history"]}')
         TempFile.manager.unlock()
         # write to info box
         self.selection_info.setText('\n'.join(desc))
 
-    def get_iterations(self) -> List[str]:
-        """Returns a list of iteration names from current change tracker
+    def get_positions(self) -> List[str]:
+        """Returns a list of position names from current change tracker
         file sorted by creation date."""
         TempFile.manager.lockForRead()
         with h5py.File(TempFile.path, 'r+') as store:
             # store in dataframe for easier sorting
             df = pd.DataFrame(columns=['Name', 'Datetime'])
-            # fetch name of each iteration as list
-            df['Name'] = list(store['iterations'].keys())
-            # fetch assosciated creation date for each iteration
+            # fetch name of each position as list
+            df['Name'] = list(store['positions'].keys())
+            # fetch assosciated creation date for each position
             df['Datetime'] = [pd.to_datetime(
-                store[f'iterations/{x}'].attrs['creation_date'],
+                store[f'positions/{x}'].attrs['creation_date'],
                 format=StandardFormats.DATETIME)
                 for x in df['Name'].tolist()]
         TempFile.manager.unlock()
         # sort by creation date and return as list
         return df.sort_values(by='Datetime')['Name'].tolist()
 
-    def refresh_iteration_dropdown(self) -> None:
-        """Refresh the iteration dropdown box with up to date
-        iterations"""
+    def refresh_position_dropdown(self) -> None:
+        """Refresh the position dropdown box with up to date
+        positions"""
         # temporarily stop signals from firing
-        self.iteration_dropdown.blockSignals(True)
+        self.position_dropdown.blockSignals(True)
         # refresh the dropdown
-        self.iteration_dropdown.clear()
-        self.iteration_dropdown.addItems(
-            ['Select iteration...']+self.get_iterations())
+        self.position_dropdown.clear()
+        self.position_dropdown.addItems(
+            ['Select position...']+self.get_positions())
         # resume signals
-        self.iteration_dropdown.blockSignals(False)
+        self.position_dropdown.blockSignals(False)
 
-    def iteration_dropdown_select(self, item: str) -> None:
-        """Set the iteration dropdown to a given item"""
-        index = self.iteration_dropdown.findText(item)
+    def position_dropdown_select(self, item: str) -> None:
+        """Set the position dropdown to a given item"""
+        index = self.position_dropdown.findText(item)
         if index == -1:  # -1 if item not found
             return print('NOT FOUND')  # TODO raise error ?
-        return self.iteration_dropdown.setCurrentIndex(index)
+        return self.position_dropdown.setCurrentIndex(index)
 
-    def create_iteration(self) -> None:
-        """Create a new iteration based on user inputs"""
-        new_dlg = NewIteration(self, self.get_iterations())
+    def create_position(self) -> None:
+        """Create a new position based on user inputs"""
+        new_dlg = NewPosition(self, self.get_positions())
         # return if user closes dialog without meeting accept criteria
         if not new_dlg.exec():
             return
-        # create the new iteration in file
+        # create the new position in file
         TempFile.manager.lockForWrite()
         with h5py.File(TempFile.path, 'r+') as store:
-            iteration = store['iterations'].create_group(new_dlg.name)
-            # generate a unique id for the iteration
-            iteration.attrs['id'] = uuid4().hex
-            iteration.attrs['description'] = new_dlg.desc
-            iteration.attrs['creator'] = os.getlogin()
-            iteration.attrs['creation_date'] = datetime.now().strftime(
+            position = store['positions'].create_group(new_dlg.name)
+            # generate a unique id for the position
+            position.attrs['id'] = uuid4().hex
+            position.attrs['description'] = new_dlg.desc
+            position.attrs['creator'] = os.getlogin()
+            position.attrs['creation_date'] = datetime.now().strftime(
                 StandardFormats.DATETIME)
         TempFile.manager.unlock()
-        self.refresh_iteration_dropdown()
-        self.iteration_dropdown_select(new_dlg.name)
+        self.refresh_position_dropdown()
+        self.position_dropdown_select(new_dlg.name)
 
     def import_existing(self) -> None:
-        """Create a new iteration from an existing iteration"""
+        """Create a new position from an existing position"""
         filepath, _ = QFileDialog.getOpenFileName(self, 'Open existing...',
                                                   QSettings().value('last_open_location', ''), '*.opticord')
         if not filepath:
             return  # return if user closes dialog without selecting a file
         import_dlg = ImportExisting(self, filepath)
         if import_dlg.exec():
-            self.refresh_iteration_dropdown()
-            self.iteration_dropdown_select(import_dlg.name)
+            self.refresh_position_dropdown()
+            self.position_dropdown_select(import_dlg.name)
 
     def reset_load_tabs(self) -> None:
         """Resets the load_tabs widget"""

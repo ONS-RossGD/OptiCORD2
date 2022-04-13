@@ -7,7 +7,7 @@ import h5py
 
 
 class RecoveryPopup(QDialog, object):
-    """Dialog window for creating a new iteration."""
+    """Dialog window for creating a new position."""
 
     def __init__(self, parent: QObject) -> None:
         super(QDialog, self).__init__(parent, Qt.WindowTitleHint)

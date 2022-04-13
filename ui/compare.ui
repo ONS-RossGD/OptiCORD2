@@ -127,7 +127,7 @@
         </property>
         <item>
          <property name="text">
-          <string>Select pre-change iteration...</string>
+          <string>Select pre-change position...</string>
          </property>
         </item>
        </widget>
@@ -142,7 +142,7 @@
         </property>
         <item>
          <property name="text">
-          <string>Select post-change iteration...</string>
+          <string>Select post-change position...</string>
          </property>
         </item>
        </widget>

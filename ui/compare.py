@@ -183,7 +183,7 @@ class ComparisonList(QListView):
     @pyqtSlot(str, str)
     def get_existing(self, pre_it: str, post_it: str) -> list:
         """Returns a list of existing comparisons given a pre and post
-        iteration"""
+        position"""
         existing = []
         TempFile.manager.lockForRead()
         with h5py.File(TempFile.path, 'r+') as store:
@@ -198,7 +198,7 @@ class ComparisonList(QListView):
     @pyqtSlot(str)
     def get_meta(self, path: str) -> list:
         """Returns a list of existing comparisons given a pre and post
-        iteration"""
+        position"""
         meta = dict()
         TempFile.manager.lockForRead()
         with h5py.File(TempFile.path, 'r+') as store:
@@ -398,7 +398,7 @@ class CompareWidget(QWidget, object):
         # magic line to get styling to work
         self.pre_dropdown.setView(QListView(self))
         self.post_dropdown.setView(QListView(self))
-        # install event filter to auto-load iterations
+        # install event filter to auto-load positions
         self.pre_dropdown.installEventFilter(self)
         self.post_dropdown.installEventFilter(self)
         # create comparison list
@@ -421,11 +421,11 @@ class CompareWidget(QWidget, object):
 
     def eventFilter(self, source: QObject, event: QEvent) -> bool:
         """Event filter to customise events of ui children"""
-        # load available iterations in dropdown menus
+        # load available positions in dropdown menus
         if source in [self.pre_dropdown, self.post_dropdown] and \
                 event.type() == QEvent.MouseButtonPress:
-            # get the iterations
-            iterations = self.get_iterations()
+            # get the positions
+            positions = self.get_positions()
             # get the current selection
             old_pre = self.pre_dropdown.currentText()
             old_post = self.post_dropdown.currentText()
@@ -435,18 +435,18 @@ class CompareWidget(QWidget, object):
             # refresh the dropdowns
             if source is self.pre_dropdown:
                 if self.post_dropdown.currentText() != \
-                        'Select post-change iteration...':
-                    iterations.remove(self.post_dropdown.currentText())
+                        'Select post-change position...':
+                    positions.remove(self.post_dropdown.currentText())
                 self.pre_dropdown.clear()
                 self.pre_dropdown.addItems(
-                    ['Select pre-change iteration...']+iterations)
+                    ['Select pre-change position...']+positions)
             if source is self.post_dropdown:
                 if self.pre_dropdown.currentText() != \
-                        'Select pre-change iteration...':
-                    iterations.remove(self.pre_dropdown.currentText())
+                        'Select pre-change position...':
+                    positions.remove(self.pre_dropdown.currentText())
                 self.post_dropdown.clear()
                 self.post_dropdown.addItems(
-                    ['Select post-change iteration...']+iterations)
+                    ['Select post-change position...']+positions)
             pre_matching = self.pre_dropdown.findText(
                 old_pre, Qt.MatchFixedString)
             post_matching = self.post_dropdown.findText(
@@ -460,18 +460,18 @@ class CompareWidget(QWidget, object):
             self.post_dropdown.blockSignals(False)
         return super().eventFilter(source, event)
 
-    def get_iterations(self) -> List[str]:
-        """Returns a list of iteration names from current change tracker
+    def get_positions(self) -> List[str]:
+        """Returns a list of position names from current change tracker
         file sorted by creation date."""
         TempFile.manager.lockForRead()
         with h5py.File(TempFile.path, 'r+') as store:
             # store in dataframe for easier sorting
             df = pd.DataFrame(columns=['Name', 'Datetime'])
-            # fetch name of each iteration as list
-            df['Name'] = list(store['iterations'].keys())
-            # fetch assosciated creation date for each iteration
+            # fetch name of each position as list
+            df['Name'] = list(store['positions'].keys())
+            # fetch assosciated creation date for each position
             df['Datetime'] = [pd.to_datetime(
-                store[f'iterations/{x}'].attrs['creation_date'],
+                store[f'positions/{x}'].attrs['creation_date'],
                 format=StandardFormats.DATETIME)
                 for x in df['Name'].tolist()]
         TempFile.manager.unlock()
@@ -489,9 +489,9 @@ class CompareWidget(QWidget, object):
             self.desc_edit.setEnabled(False)
             self.desc_edit.setPlaceholderText('Comparison description...')
 
-        if self.pre_dropdown.currentText() != 'Select pre-change iteration...' \
+        if self.pre_dropdown.currentText() != 'Select pre-change position...' \
             and self.post_dropdown.currentText() != \
-                'Select post-change iteration...':
+                'Select post-change position...':
             enable_edits()
             self.load_visualisations()
         else:
@@ -500,13 +500,13 @@ class CompareWidget(QWidget, object):
         self.manage_buttons()
 
     def load_visualisations(self):
-        """Loads all visualisations from selected iterations into
+        """Loads all visualisations from selected positions into
         the ComparisonList"""
         with h5py.File(TempFile.path, 'r+') as store:
             pre_vis = list(store[
-                f'iterations/{self.pre_dropdown.currentText()}'].keys())
+                f'positions/{self.pre_dropdown.currentText()}'].keys())
             post_vis = list(store[
-                f'iterations/{self.post_dropdown.currentText()}'].keys())
+                f'positions/{self.post_dropdown.currentText()}'].keys())
         common = [x for x in post_vis if x in pre_vis]
         pre_only = [x for x in pre_vis if x not in post_vis]
         post_only = [x for x in post_vis if x not in pre_vis]
