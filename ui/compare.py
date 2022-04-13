@@ -1,7 +1,6 @@
+from enum import auto
 import os
-import time
 from typing import List
-from wsgiref import validate
 from PyQt5.QtGui import QStandardItem, QStandardItemModel, QPixmap, QPainter, QFont, QFontMetrics
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import QEvent, QObject, QSettings, QModelIndex, QPoint, QRectF, Qt, pyqtSlot, QDate, QRunnable, pyqtSignal, QThreadPool
@@ -10,6 +9,7 @@ from PyQt5.QtWidgets import QAbstractItemView, QListView, QTreeView, QWidget, QS
 import h5py
 import pandas as pd
 from comparison import InvalidComparison, PandasComparison
+from export import Export, ExportOptions
 from util import CharacterSet, NameValidator, StandardFormats, TempFile, Switch
 
 
@@ -32,11 +32,12 @@ class SelectAllItem(QStandardItem):
 class ComparisonItem(QStandardItem):
     """Custom QListWidget item for comparison items"""
     # states
-    LONELY = -1
-    QUEUED = 0
-    PROCESSING = 1
-    FAILURE = 2
-    SUCCESS = 3
+    LONELY = auto()
+    QUEUED = auto()
+    PROCESSING = auto()
+    EXPORTING = auto()
+    FAILURE = auto()
+    SUCCESS = auto()
     name: str  # name of the visualisation
     state: int  # state of the item
     msg: str  # additional messages to be displayed in line
@@ -237,6 +238,10 @@ class ComparisonDeligate(QStyledItemDelegate):
         self.loading = QSvgRenderer('./ui/resources/'
                                     f'{QSettings().value("active_theme").folder}'
                                     '/loading.svg', parent)
+        # svg animation for exporting
+        self.exporting = QSvgRenderer('./ui/resources/'
+                                      f'{QSettings().value("active_theme").folder}'
+                                      '/exporting.svg', parent)
         # svg icon for success
         self.success = QPixmap('./ui/resources/'
                                f'{QSettings().value("active_theme").folder}'
@@ -272,6 +277,11 @@ class ComparisonDeligate(QStyledItemDelegate):
             icon_bounds = QRectF(rect.right()+hgap, option.rect.top()+(vgap/2),
                                  option.rect.height()-vgap, option.rect.height()-vgap)
             self.loading.render(painter, icon_bounds)
+        # if exporting render the exporting animation
+        elif item.state == ComparisonItem.EXPORTING:
+            icon_bounds = QRectF(rect.right()+hgap, option.rect.top()+(vgap/2),
+                                 option.rect.height()-vgap, option.rect.height()-vgap)
+            self.exporting.render(painter, icon_bounds)
         # otherwise just paint the success/failure icon and message
         else:
             if item.state == ComparisonItem.SUCCESS:
@@ -315,133 +325,16 @@ class OptionsTree(QTreeView):
         self.expanded.connect(lambda: self.resizeColumnToContents(0))
         self.setHeaderHidden(True)
         self.setModel(self.model)
-        # setup comparison options
-        self.options = ComparisonOptions(self)
-        self.setup_options()
+        # setup export options tree
+        self.create_tree()
         # get fixed width for container in ComparisonWidget
         self.fixedWidth = self.columnWidth(0) + 150
 
-    def setup_options(self) -> None:
-        """Where options are managed"""
-        # Sheet Options
-        self.options.create("Sheets", ComparisonOption.BLANK)
-        self.options.create(
-            "Pre-change sheet", ComparisonOption.TOGGLE, parent="Sheets")
-        self.options.create(
-            "Post-change sheet", ComparisonOption.TOGGLE, parent="Sheets")
-        self.options.create(
-            "MetaData sheet", ComparisonOption.TOGGLE, parent="Sheets",
-            default_value=True)
-        # Analysis Columns
-        self.options.create("Analysis Columns", ComparisonOption.BLANK)
-        self.options.create("Overall ABS Diff",
-                            ComparisonOption.TOGGLE, parent="Analysis Columns")
-        self.options.create("Overall Diff",
-                            ComparisonOption.TOGGLE, parent="Analysis Columns")
-        self.options.create("Max ABS Diff",
-                            ComparisonOption.TOGGLE, parent="Analysis Columns")
-        self.options.create("Max ABS Diff (%)",
-                            ComparisonOption.TOGGLE, parent="Analysis Columns")
-        self.options.create("Max ABS Diff Date",
-                            ComparisonOption.TOGGLE, parent="Analysis Columns")
-        # Date Range Options
-        self.options.create("Compare within specific Date Range",
-                            ComparisonOption.TOGGLE)
-        self.options.create("From: ", ComparisonOption.DATE,
-                            parent="Compare within specific Date Range",
-                            default_value=QDate(1997, 1, 1))
-        self.options.create("To: ", ComparisonOption.DATE,
-                            parent="Compare within specific Date Range",
-                            default_value=QDate.currentDate())
-        # Export Options
-        self.options.create("Skip exporting if no differences",
-                            ComparisonOption.TOGGLE, default_value=True)
-        self.options.create("Include series without differences",
-                            ComparisonOption.TOGGLE,
-                            parent="Skip exporting if no differences")
-
-
-class ComparisonOption(QStandardItem):
-    """A customised QStandardItem object to hold all information
-    relating to a comparison option."""
-    # actions
-    BLANK = 0
-    TOGGLE = 1
-    DATE = 2
-    widget: QObject
-
-    def __init__(self, text: str, action: int, default_value) -> None:
-        if action not in [self.BLANK, self.TOGGLE, self.DATE]:
-            raise Exception("Comparison selection not recognised.")
-        super(QStandardItem, self).__init__(text)
-        self.action = action
-        self.setting_name = "CompOpt_"+text
-        # align with user settings
-        self.value = QSettings().value(self.setting_name, default_value)
-        # setup assosciate widget using user settings
-        if self.action is self.TOGGLE:
-            switch = Switch()
-            switch.setMaximumSize(switch.sizeHint())
-            # switch.isChecked() returns "true" or "false"
-            # so need to allow for string version of bool
-            if self.value in [True, "true"]:
-                switch.setChecked(True)
-            # connect switch toggle to QSetting
-            switch.toggled.connect(lambda: QSettings().setValue(
-                self.setting_name, switch.isChecked()))
-            self.widget = switch
-        if self.action is self.DATE:
-            date = QDateEdit()
-            date.setDisplayFormat('MMM yyyy')
-            date.setMaximumSize(120, date.sizeHint().height())
-            # connect Date to QSetting
-            date.setDate(QSettings().value(self.setting_name, self.value))
-            date.dateChanged.connect(lambda: QSettings().setValue(
-                self.setting_name, date.date()))
-            self.widget = date
-
-
-class ComparisonOptions():
-    """A registry of all comparison options"""
-    tree: OptionsTree  # The OptionsTree parent widget
-    options = dict()  # A dictionary of all options
-
-    def __init__(self, tree: OptionsTree) -> None:
-        self.tree = tree
-
-    def create(self, text: str, action: int,
-               parent: str = None, default_value=False) -> None:
-        """Create a new option"""
-        if text in self.options:
-            raise Exception(f'An option for "{text}" already exists.')
-        opt = ComparisonOption(text, action, default_value)
-        placeholder = QStandardItem()
-        if parent:  # if a parent is given in creation
-            parent = self.options[parent]  # overwrite with parent item
-            parent.appendRow([opt, placeholder])  # add new item as child
-            # if parent is togglable, set child enabled/disabled based on parent
-            if parent.action is ComparisonOption.TOGGLE:
-                self.toggle_row_state(opt, placeholder,
-                                      parent.widget.isChecked())
-                parent.widget.toggled.connect(lambda: self.toggle_row_state(
-                    opt, placeholder, parent.widget.isChecked()))
-        else:  # otherwise add it as new root row
-            self.tree.model.appendRow([opt, placeholder])
-        # add widget to column 2 if option has an action
-        if action is not ComparisonOption.BLANK:
-            self.tree.setIndexWidget(placeholder.index(), opt.widget)
-        # register option in the dict
-        self.options[text] = opt
-
-    def toggle_row_state(self, opt, placeholder, state) -> None:
-        """Disable/Enable a given row"""
-        opt.setEnabled(state)
-        opt.widget.setEnabled(state)
-        # turn child TOGGLE widget to False
-        if opt.action is ComparisonOption.TOGGLE:
-            if opt.widget.isChecked():
-                opt.widget.setChecked(False)
-        placeholder.setEnabled(state)
+    def create_tree(self) -> None:
+        for key, option in list(vars(ExportOptions).items()):
+            if key.startswith('__'):
+                continue
+            option.add_to_tree(self)
 
 
 class ExportDialog(QDialog, object):
@@ -604,6 +497,7 @@ class CompareWidget(QWidget, object):
         else:
             disable_edits()
             self.comp_list.clear()
+        self.manage_buttons()
 
     def load_visualisations(self):
         """Loads all visualisations from selected iterations into
@@ -650,7 +544,6 @@ class CompareWidget(QWidget, object):
             not_compared = checked_items.loc[
                 checked_items['State']
                 != ComparisonItem.SUCCESS, 'Item'].tolist()
-            print(not_compared)
             if not_compared:
                 self.compare_items(not_compared)
         else:
@@ -663,6 +556,7 @@ class CompareWidget(QWidget, object):
         if self.export_button.text() == 'Export':
             self.export_path = False
             folder = self.ask_export()
+            print(folder)
             if not folder:
                 QMessageBox.warning(
                     self,
@@ -679,8 +573,7 @@ class CompareWidget(QWidget, object):
                     'Comparisons were not exported',
                     'You must enter a valid name for the export folder.')
                 return
-            self.export_path = export_name.path
-            print('begin export')
+            self.export_items(export_name.path)
         else:
             self.cancel()
 
@@ -697,6 +590,20 @@ class CompareWidget(QWidget, object):
                 item)
             QThreadPool.globalInstance().start(self.comparison_worker)
             self.comparison_worker.signals.finished.connect(self.try_unlock)
+
+    def export_items(self, export_folder: str):
+        """Starts running ExportWorkers for checked list items."""
+        self.register = []
+        items = self.comp_list.get_checked_items()['Item'].tolist()
+        self.lock(self.export_button)
+        for item in items:
+            self.export_worker = ExportWorker(
+                self.register, self.pre_dropdown.currentText(),
+                self.post_dropdown.currentText(),
+                export_folder,
+                item)
+            QThreadPool.globalInstance().start(self.export_worker)
+            self.export_worker.signals.finished.connect(self.try_unlock)
 
     def lock(self, cancel_button: QPushButton) -> None:
         """Locks the UI for comparison"""
@@ -737,12 +644,17 @@ class CompareWidget(QWidget, object):
             if QThreadPool.globalInstance().tryTake(worker):
                 self.register.remove(worker)
 
-    def ask_export(self) -> None:
+    def ask_export(self) -> str:
         """Starts a pop-up for user to choose export folder."""
         folder = QFileDialog.getExistingDirectory(
             None, 'Select folder where comparisons will be exported',
             '', QFileDialog.ShowDirsOnly)
-        return folder
+        if folder:
+            # if folder doesn't exist then start again
+            if not os.path.isdir(folder):
+                return self.ask_export()
+            # otherwise folder exists so return it
+            return folder
 
 
 class ComparisonSignals(QObject):
@@ -754,8 +666,6 @@ class ComparisonSignals(QObject):
 
 class ComparisonWorker(QRunnable):
     """A QRunnable object to handle reading Comparison files"""
-    pre: str  # pre iteration as string
-    post: str  # post iteration as string
     item: ComparisonItem  # ComparisonItem to be compared
 
     def __init__(self, reg: list, pre: str, post: str,
@@ -778,6 +688,51 @@ class ComparisonWorker(QRunnable):
             self.item.state = ComparisonItem.PROCESSING
             comp = PandasComparison(self.pre, self.post, self.item)
             comp.compare()
+            self.item.state = ComparisonItem.SUCCESS
+        except InvalidComparison as e:
+            self.signals.update_tooltip.emit(e.full)
+            self.signals.update_msg.emit(e.short)
+            self.item.state = ComparisonItem.FAILURE
+        finally:
+            self.reg.remove(self)
+            self.signals.finished.emit()
+
+
+class ExportSignals(QObject):
+    """"""
+    update_tooltip = pyqtSignal(str)
+    update_msg = pyqtSignal(str)
+    finished = pyqtSignal()
+
+
+class ExportWorker(QRunnable):
+    """A QRunnable object to handle reading Comparison files"""
+    item: ComparisonItem  # ComparisonItem to be compared
+
+    def __init__(self, reg: list, pre: str, post: str,
+                 export_folder: str, item: ComparisonItem) -> None:
+        super(QRunnable, self).__init__()
+        self.reg = reg
+        self.item = item
+        self.pre = pre
+        self.post = post
+        self.exp_fol = export_folder
+        self.reg.append(self)
+        self.signals = ExportSignals()
+        self.signals.update_msg.connect(
+            lambda text: self.item.update_text(text))
+        self.signals.update_tooltip.connect(
+            lambda text: self.item.update_tooltip(text))
+
+    def run(self) -> None:
+        """"""
+        try:
+            self.item.state = ComparisonItem.EXPORTING
+            exporter = Export(self.pre, self.post, self.exp_fol, self.item)
+            if exporter.should_skip:
+                print(f'Skipping export of {self.item.name}')
+            else:
+                exporter.export()
             self.item.state = ComparisonItem.SUCCESS
         except InvalidComparison as e:
             self.signals.update_tooltip.emit(e.full)

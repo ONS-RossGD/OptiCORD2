@@ -1,0 +1,13 @@
+number of runs = 3
+
+1 large sheet
+Pandas finished in 82.8428738
+xlsxwriter finished in 70.8836312
+
+3 sheet
+Pandas finished in 84.07211670000001
+xlsxwriter finished in 62.97688269999999
+
+3 large sheet
+Pandas finished in 808.4426473
+xlsxwriter finished in 617.5773873999999

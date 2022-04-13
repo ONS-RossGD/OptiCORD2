@@ -35,6 +35,7 @@
     <file>dark-blue/down_arrow_disabled.svg</file>
     <file>dark-blue/down_arrow_hover.svg</file>
     <file>dark-blue/explore.svg</file>
+    <file>dark-blue/exporting.svg</file>
     <file>dark-blue/failed.svg</file>
     <file>dark-blue/file_upload.svg</file>
     <file>dark-blue/hmovetoolbar.svg</file>
@@ -105,6 +106,7 @@
     <file>dark-green/down_arrow_disabled.svg</file>
     <file>dark-green/down_arrow_hover.svg</file>
     <file>dark-green/explore.svg</file>
+    <file>dark-green/exporting.svg</file>
     <file>dark-green/failed.svg</file>
     <file>dark-green/file_upload.svg</file>
     <file>dark-green/hmovetoolbar.svg</file>
@@ -175,6 +177,7 @@
     <file>dark-purple/down_arrow_disabled.svg</file>
     <file>dark-purple/down_arrow_hover.svg</file>
     <file>dark-purple/explore.svg</file>
+    <file>dark-purple/exporting.svg</file>
     <file>dark-purple/failed.svg</file>
     <file>dark-purple/file_upload.svg</file>
     <file>dark-purple/hmovetoolbar.svg</file>
@@ -245,6 +248,7 @@
     <file>light-blue/down_arrow_disabled.svg</file>
     <file>light-blue/down_arrow_hover.svg</file>
     <file>light-blue/explore.svg</file>
+    <file>light-blue/exporting.svg</file>
     <file>light-blue/failed.svg</file>
     <file>light-blue/file_upload.svg</file>
     <file>light-blue/hmovetoolbar.svg</file>
@@ -315,6 +319,7 @@
     <file>light-green/down_arrow_disabled.svg</file>
     <file>light-green/down_arrow_hover.svg</file>
     <file>light-green/explore.svg</file>
+    <file>light-green/exporting.svg</file>
     <file>light-green/failed.svg</file>
     <file>light-green/file_upload.svg</file>
     <file>light-green/hmovetoolbar.svg</file>
@@ -385,6 +390,7 @@
     <file>light-purple/down_arrow_disabled.svg</file>
     <file>light-purple/down_arrow_hover.svg</file>
     <file>light-purple/explore.svg</file>
+    <file>light-purple/exporting.svg</file>
     <file>light-purple/failed.svg</file>
     <file>light-purple/file_upload.svg</file>
     <file>light-purple/hmovetoolbar.svg</file>
