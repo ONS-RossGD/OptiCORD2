@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import Enum, auto
 import os
 from typing import Any
-from util import MetaDict, StandardFormats, Switch, TempFile
+from util import MetaDict, Switch, TempFile
 from PyQt5.QtCore import QSettings, QObject,  QDate
 from PyQt5.QtWidgets import QDateEdit, QTreeView
 from PyQt5.QtGui import QStandardItem
@@ -104,7 +104,10 @@ class ExportOption():
         self.placeholder_item.setEnabled(state)
 
     def __call__(self, *args: Any, **kwds: Any) -> Any:
-        return self.value
+        if self.action == ExportOptionAction.TOGGLE:
+            return self.value
+        if self.action == ExportOptionAction.DATE:
+            return self.widget.date().toPyDate()
 
 
 class ExportOptions(object):
@@ -362,8 +365,8 @@ class Export():
         """Drop all dates from the given dataframe outside of the 
         user specified range."""
         df.columns = pd.to_datetime(df.columns)
-        date_from = self.options.date_filter_from().toPyDate()
-        date_to = self.options.date_filter_to().toPyDate()
+        date_from = self.options.date_filter_from()
+        date_to = self.options.date_filter_to()
         df = df[[c for c in df.columns if c >= date_from and c <= date_to]]
         return df
 

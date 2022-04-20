@@ -553,6 +553,16 @@ class CompareWidget(QWidget, object):
         is in progress."""
         if self.export_button.text() == 'Export':
             self.export_path = False
+            # check date filter
+            if ExportOptions.date_filter():
+                if ExportOptions.date_filter_from() > \
+                        ExportOptions.date_filter_to():
+                    QMessageBox.warning(
+                        self,
+                        'Invalid Date Filter',
+                        'When using a date filter, the "From" date must'
+                        ' be before the "To" date.')
+                    return
             folder = self.ask_export()
             if not folder:
                 QMessageBox.warning(
