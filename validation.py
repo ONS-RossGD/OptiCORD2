@@ -22,7 +22,7 @@ def validate_filepath(filepath: str) -> None:
             f'{filepath} has invalid extension: "{extension}"',
             'File is not a csv')
     visualisation_name = filepath.split('/')[-1]
-    if not re.search('(.*?_\d\d\d\d\d\d_\d\d\d\d\d\d.csv)',
+    if not re.search('(.*?_\d\d\d\d\d\d_\d\d\d\d\d\d.csv|.*?_\d*\(VisualisationCSV\))',
                      visualisation_name):
         raise InvalidVisualisation(f'Filename "{visualisation_name}" '
                                    'is not in the format of a downloaded CORD visualisation',

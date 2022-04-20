@@ -568,6 +568,10 @@ class Export():
                 ordered[key] = val
             # write items from the  ordered dictionary
             for key, val in ordered.items():
+                # Convert Downloaded to datetime since datetime format isn't
+                # supported in h5.
+                if key == 'Downloaded':
+                    val = datetime.fromtimestamp(val)
                 key += ':'
                 ws.write(sub_r, col, key, idx_format)
                 if type(val) is np.ndarray:

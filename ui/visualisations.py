@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from typing import List
 import warnings
@@ -303,8 +304,10 @@ class VisualisationParser():
         # validate the filepath is of correct format
         validate_filepath(self.filepath)
         self.meta = dict()  # init the meta dict
-        # assign the name and download time
-        self.name, self.meta['Downloaded'] = self._determine_name()
+        # assign the name
+        self.name = self._determine_name()
+        # get the download time from the windows file creation time
+        self.meta['Downloaded'] = os.path.getctime(self.filepath)
         # validate visualisation is unique
         validate_unique(self.name, self.vis_list.existing)
 
@@ -387,9 +390,12 @@ class VisualisationParser():
 
     def _determine_name(self) -> tuple:
         """Determines the visualisation name from it's filepath"""
-        results = re.match('(.*?)_(\d\d\d\d\d\d_\d\d\d\d\d\d).csv',
+        results = re.match('(.*?)_\d\d\d\d\d\d_\d\d\d\d\d\d.csv|(.*?)_\d*\(VisualisationCSV\)',
                            self.filepath.split('/')[-1])
-        return results.group(1), results.group(2)
+        if results.group(1):
+            return results.group(1)
+        else:
+            return results.group(2)
 
     def _retrieve_markers(self) -> List[tuple]:
         """Find start and end indices that will later be used to slice
