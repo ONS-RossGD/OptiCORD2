@@ -46,7 +46,7 @@ class ImportExisting(QDialog):
         # load the vanilla elements from QT Designer file
         loadUi("./ui/import_existing.ui", self)
         self.filepath = filepath
-        self.iter_dict = dict()
+        self.pos_dict = dict()
         # read position names and descs from file
         with h5py.File(filepath, 'r') as store:
             for name, item in store['positions'].items():
@@ -56,9 +56,9 @@ class ImportExisting(QDialog):
                 desc.append(f'Created by: {item.attrs["creator"]}')
                 desc.append('Creation Date: '
                             f'{item.attrs["creation_date"]}')
-                self.iter_dict[name] = '\n'.join(desc)
+                self.pos_dict[name] = '\n'.join(desc)
         # add positions to the list widget
-        [self.list.addItem(i) for i in self.iter_dict.keys()]
+        [self.list.addItem(i) for i in self.pos_dict.keys()]
         # signals
         self.list.itemClicked.connect(self.update_desc)
         self.import_button.clicked.connect(self.import_action)
@@ -67,7 +67,7 @@ class ImportExisting(QDialog):
         """Update the description box with the relevant description"""
         if not self.import_button.isEnabled():
             self.import_button.setEnabled(True)
-        self.desc.setText(self.iter_dict[self.list.currentItem().text()])
+        self.desc.setText(self.pos_dict[self.list.currentItem().text()])
 
     def import_action(self) -> None:
         """Called when the import button is clicked. Copies the selected

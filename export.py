@@ -1,8 +1,9 @@
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum, auto
 import os
 from typing import Any
-from util import MetaDict, Switch, TempFile
+from util import MetaDict, StandardFormats, Switch, TempFile
 from PyQt5.QtCore import QSettings, QObject,  QDate
 from PyQt5.QtWidgets import QDateEdit, QTreeView
 from PyQt5.QtGui import QStandardItem
@@ -148,8 +149,9 @@ class ExportOptions(object):
 class Export():
     """"""
 
-    def __init__(self, pre: str, post: str,
+    def __init__(self, desc: list, pre: str, post: str,
                  export_folder: str, item) -> None:
+        self.desc = desc
         self.pre = pre
         self.post = post
         self.exp_fol = export_folder
@@ -204,6 +206,8 @@ class Export():
                                   post, self.post_style)
             self._write_sheet(f'Differences ({per})', diff, self.diff_style,
                               difference=True)
+            if self.options.meta_sheet():
+                self._write_meta()
         self.wb.close()
         # if nothing has been written in the file, delete it
         if not self.written:
@@ -216,28 +220,57 @@ class Export():
             'align': 'center'})
         self.missing_pre_format = self.wb.add_format({
             'italic': True,
-            'font_color': '#92cddc',
+            'font_color': '#3B9CB7',
             'bg_color': '#daeef3',
             'border': 2,
-            'border_color': '#92cddc',
+            'border_color': '#3B9CB7',
             'align': 'center'})
         self.missing_series_pre_format = self.wb.add_format({
             'italic': True,
-            'font_color': '#92cddc',
+            'font_color': '#3B9CB7',
             'bg_color': '#daeef3',
             'align': 'center'})
         self.missing_post_format = self.wb.add_format({
             'italic': True,
-            'font_color': '#fabf8f',
+            'font_color': '#F6882E',
             'bg_color': '#fde9d9',
             'border': 2,
-            'border_color': '#fabf8f',
+            'border_color': '#F6882E',
             'align': 'center'})
         self.missing_series_post_format = self.wb.add_format({
             'italic': True,
-            'font_color': '#fabf8f',
+            'font_color': '#F6882E',
             'bg_color': '#fde9d9',
             'align': 'center'})
+        self.meta_idx_format = self.wb.add_format({
+            'bold': True,
+            'align': 'right'})
+        self.meta_val_format = self.wb.add_format({
+            'bold': False,
+            'align': 'left',
+            'num_format': 'd/m/yyyy, hh:MM AM/PM'})
+        self.meta_pre_idx_format = self.wb.add_format({
+            'bold': True,
+            'font_color': '#3B9CB7',
+            'bg_color': '#daeef3',
+            'align': 'right'})
+        self.meta_pre_val_format = self.wb.add_format({
+            'bold': False,
+            'font_color': '#3B9CB7',
+            'bg_color': '#daeef3',
+            'align': 'left',
+            'num_format': 'd/m/yyyy, hh:MM AM/PM'})
+        self.meta_post_idx_format = self.wb.add_format({
+            'bold': True,
+            'font_color': '#F6882E',
+            'bg_color': '#fde9d9',
+            'align': 'right'})
+        self.meta_post_val_format = self.wb.add_format({
+            'bold': False,
+            'font_color': '#F6882E',
+            'bg_color': '#fde9d9',
+            'align': 'left',
+            'num_format': 'd/m/yyyy, hh:MM AM/PM'})
 
         self.pre_style = 'Table Style Medium 6'
         self.post_style = 'Table Style Medium 7'
@@ -493,6 +526,75 @@ class Export():
         if difference:
             _conditional_formatting()
         ws.freeze_panes(1, len(idx_cols))
+
+    def _write_meta(self) -> None:
+        """Write the metadata sheet for the comparison."""
+        pre_meta = MetaDict(f'positions/{self.pre}/{self.item.name}')
+        post_meta = MetaDict(f'positions/{self.post}/{self.item.name}')
+        ws = self.wb.add_worksheet('MetaData')
+        r = 0
+        ws.write(r, 0, 'OptiCORD File:', self.meta_idx_format)
+        ws.write(r, 1, TempFile.saved_path, self.meta_val_format)
+        r += 1
+        ws.write(r, 0, 'Exported By:', self.meta_idx_format)
+        ws.write(r, 1, os.getlogin(), self.meta_val_format)
+        r += 1
+        ws.write(r, 0, 'Exported:', self.meta_idx_format)
+        ws.write_datetime(r, 1, datetime.now(), self.meta_val_format)
+        r += 1
+        ws.write(r, 0, 'Description:', self.meta_idx_format)
+        for line in self.desc:
+            ws.write(r, 1, line, self.meta_val_format)
+            r += 1
+        r += 1
+        ws.write(r, 0, 'Pre Position:', self.meta_pre_idx_format)
+        ws.write(r, 1, self.pre, self.meta_pre_val_format)
+        ws.write(r, 3, 'Post Position:', self.meta_post_idx_format)
+        ws.write(r, 4, self.post, self.meta_post_val_format)
+        r += 1
+
+        def _write_pos_meta(sub_r: int, col: int, pos: dict,
+                            idx_format, val_format) -> None:
+            # order that the metadata will be written
+            order = ['Downloaded', 'Statistical Activity', 'Mode',
+                     'Status', 'Dataset', 'Dimensions', 'Periodicities']
+            # create a new ordered dictionary based on the above
+            ordered = dict()
+            for o in order:
+                if o in pos.keys():
+                    ordered[o] = pos.pop(o)
+            # ensure any extra metadata items are added
+            for key, val in pos.items():
+                ordered[key] = val
+            # write items from the  ordered dictionary
+            for key, val in ordered.items():
+                key += ':'
+                ws.write(sub_r, col, key, idx_format)
+                if type(val) is np.ndarray:
+                    val = val.tolist()
+                if type(val) is dict:
+                    ws.write(sub_r, col+1, '', val_format)
+                    for sub_key, sub_val in val.items():
+                        sub_r += 1
+                        ws.write(sub_r, col, sub_key, idx_format)
+                        ws.write(sub_r, col+1, sub_val, val_format)
+                elif type(val) is list:
+                    ws.write(sub_r, col+1, (', '.join(val)), val_format)
+                elif type(val) is datetime:
+                    ws.write_datetime(sub_r, col+1, val, val_format)
+                else:
+                    ws.write(sub_r, col+1, val, val_format)
+                sub_r += 1
+
+        _write_pos_meta(r, 0, pre_meta, self.meta_pre_idx_format,
+                        self.meta_pre_val_format)
+        _write_pos_meta(r, 3, post_meta, self.meta_post_idx_format,
+                        self.meta_post_val_format)
+
+        ws.set_column(0, 0, width=25)
+        ws.set_column(1, 1, width=40)
+        ws.set_column(3, 3, width=25)
+        ws.set_column(4, 4, width=40)
 
 
 """

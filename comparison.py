@@ -194,7 +194,7 @@ class PandasComparison(Comparison):
         # be set to '.' as this is how they are displayed
         # in CORD.
         diff_df = diff_df.fillna('.')
-        # return the orignal difference dataframes and a
+        # return the orignal difference dataframe and a
         # dataframe of just the configured nan values
         return (diff_df_unconfigured, diff_df[nans])
 

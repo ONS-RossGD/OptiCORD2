@@ -415,7 +415,7 @@ class CompareWidget(QWidget, object):
             self.name_desc_manager)
         self.post_dropdown.currentIndexChanged.connect(
             self.name_desc_manager)
-        self.comp_list.model.itemChanged.connect(self.manage_buttons)
+        self.comp_list.model.itemChanged.connect(self.manage_ui_states)
         self.compare_button.clicked.connect(self.compare_action)
         self.export_button.clicked.connect(self.export_action)
 
@@ -482,22 +482,13 @@ class CompareWidget(QWidget, object):
         """Manages the enabling/disabling of the name and description edits
         depending on the ui state."""
 
-        def enable_edits() -> None:
-            self.desc_edit.setEnabled(True)
-
-        def disable_edits() -> None:
-            self.desc_edit.setEnabled(False)
-            self.desc_edit.setPlaceholderText('Comparison description...')
-
         if self.pre_dropdown.currentText() != 'Select pre-change position...' \
             and self.post_dropdown.currentText() != \
                 'Select post-change position...':
-            enable_edits()
             self.load_visualisations()
         else:
-            disable_edits()
             self.comp_list.clear()
-        self.manage_buttons()
+        self.manage_ui_states()
 
     def load_visualisations(self):
         """Loads all visualisations from selected positions into
@@ -514,28 +505,35 @@ class CompareWidget(QWidget, object):
                               self.post_dropdown.currentText(),
                               common, pre_only, post_only)
         # initally manage buttons
-        self.manage_buttons()
+        self.manage_ui_states()
 
     @pyqtSlot()
-    def manage_buttons(self):
-        """Manages the state (Enabled/Disabled) of the Compare and 
-        Export buttons."""
+    def manage_ui_states(self):
+        """Manages the various ui states (Enabled/Disabled) based on the
+        checked items in the comparison list."""
         checked_items = self.comp_list.get_checked_items()
         # if no checked items or items contain a failure, dont allow anything
         if checked_items.empty or checked_items.eq(
                 ComparisonItem.FAILURE)['State'].any():
             self.compare_button.setEnabled(False)
             self.export_button.setEnabled(False)
+            self.desc_edit.clear()
+            self.desc_edit.setEnabled(False)
         # if all items are already compared, allow export but not compare
         elif checked_items.eq(ComparisonItem.SUCCESS)['State'].all():
             self.compare_button.setEnabled(False)
             self.export_button.setEnabled(True)
+            self.desc_edit.setEnabled(True)
+            self.desc_edit.setPlaceholderText(
+                'Enter description for export...')
         # otherwise allow compare but not export
         else:
             self.compare_button.setEnabled(True)
             self.export_button.setEnabled(False)
+            self.desc_edit.clear()
+            self.desc_edit.setEnabled(False)
 
-    @pyqtSlot()
+    @ pyqtSlot()
     def compare_action(self) -> None:
         """Starts correct action based on whether or not a comparison
         is in progress."""
@@ -549,14 +547,13 @@ class CompareWidget(QWidget, object):
         else:
             self.cancel()
 
-    @pyqtSlot()
+    @ pyqtSlot()
     def export_action(self) -> None:
         """Starts correct action based on whether or not a comparison
         is in progress."""
         if self.export_button.text() == 'Export':
             self.export_path = False
             folder = self.ask_export()
-            print(folder)
             if not folder:
                 QMessageBox.warning(
                     self,
@@ -593,12 +590,23 @@ class CompareWidget(QWidget, object):
 
     def export_items(self, export_folder: str):
         """Starts running ExportWorkers for checked list items."""
+        def _get_description() -> list:
+            """Get the description string from the description box.
+            If the description box is empty, fill with preset string."""
+            desc = self.desc_edit.toPlainText()
+            if desc == '':
+                desc = f'Ask {os.getlogin()} for more info'
+            desc = desc.split('\n')
+            return desc
+
         self.register = []
         items = self.comp_list.get_checked_items()['Item'].tolist()
         self.lock(self.export_button)
         for item in items:
             self.export_worker = ExportWorker(
-                self.register, self.pre_dropdown.currentText(),
+                self.register,
+                _get_description(),
+                self.pre_dropdown.currentText(),
                 self.post_dropdown.currentText(),
                 export_folder,
                 item)
@@ -618,7 +626,7 @@ class CompareWidget(QWidget, object):
         cancel_button.setEnabled(True)
         cancel_button.setText('Cancel')
 
-    @pyqtSlot()
+    @ pyqtSlot()
     def try_unlock(self) -> None:
         """Checks if to see if the register is empty, if so unlocks"""
         if self.register == []:
@@ -634,9 +642,10 @@ class CompareWidget(QWidget, object):
         self.post_dropdown.setEnabled(True)
         self.options.setEnabled(True)
         self.comp_list.setEnabled(True)
-        self.manage_buttons()
+        self.manage_ui_states()
+        self.desc_edit.clear()
 
-    @pyqtSlot()
+    @ pyqtSlot()
     def cancel(self) -> None:
         """Cancels any active comparisons if they have not yet started."""
         self.compare_button.setEnabled(False)
@@ -709,10 +718,11 @@ class ExportWorker(QRunnable):
     """A QRunnable object to handle reading Comparison files"""
     item: ComparisonItem  # ComparisonItem to be compared
 
-    def __init__(self, reg: list, pre: str, post: str,
+    def __init__(self, reg: list, desc: list, pre: str, post: str,
                  export_folder: str, item: ComparisonItem) -> None:
         super(QRunnable, self).__init__()
         self.reg = reg
+        self.desc = desc
         self.item = item
         self.pre = pre
         self.post = post
@@ -728,7 +738,8 @@ class ExportWorker(QRunnable):
         """"""
         try:
             self.item.state = ComparisonItem.EXPORTING
-            exporter = Export(self.pre, self.post, self.exp_fol, self.item)
+            exporter = Export(self.desc, self.pre, self.post,
+                              self.exp_fol, self.item)
             if exporter.should_skip:
                 print(f'Skipping export of {self.item.name}')
             else:

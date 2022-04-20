@@ -41,7 +41,7 @@
       </sizepolicy>
      </property>
      <property name="placeholderText">
-      <string>Comparison description...</string>
+      <string>Enter description for export...</string>
      </property>
     </widget>
    </item>

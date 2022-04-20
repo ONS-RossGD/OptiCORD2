@@ -477,8 +477,8 @@ class VisualisationParser():
         del df  # remove df from memory
         # validate_meta for instances where line contains more info
         # than required
-        self.meta['Stat Act'] = validate_meta('Stat Act',
-                                              'Statistical Activity = (.*?)$', meta_series)
+        self.meta['Statistical Activity'] = validate_meta('Statistical Activity',
+                                                          'Statistical Activity = (.*?)$', meta_series)
         dataset_mode = validate_meta('Dataset:Mode',
                                      '.*?Dataset:(.*?),', meta_series)
         self.meta['Dataset'] = (':').join(dataset_mode.split(':')[:-1])
@@ -496,7 +496,7 @@ class VisualisationParser():
             # activate store once "Coverage Descriptors" is found
             if item == "Coverage Descriptors":
                 store = True
-        self.meta['Coverage'] = coverage
+        self.meta['Coverage Descriptors'] = coverage
         self.meta
 
     def _convert_column_dates(self, per: str,
