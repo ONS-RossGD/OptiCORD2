@@ -73,6 +73,9 @@ class TempFile:
     def recover() -> None:
         """Opens the recovery file"""
         TempFile.path = TempFile.recovery_path
+        # lock and unlock so that save changes warning appears
+        TempFile.manager.lockForWrite()
+        TempFile.manager.unlock()
 
     def save_to_location(filepath: str) -> None:
         """Saves the temp file to a specified filepath, overwriting any
@@ -110,6 +113,7 @@ class MetaDict(dict):
                 else:
                     self[key] = val
         TempFile.manager.unlock()
+
 
 class CharacterSet:
     FULL: set = {'\\', '/', ':', '*', '?', '"', '<', '>', '|'}
