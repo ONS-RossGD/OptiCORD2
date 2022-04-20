@@ -1946,6 +1946,7 @@ QDialogButtonBox
 
 QMessageBox
 {
+    font: 12pt 'Segoe UI';
     messagebox-critical-icon: url(:/dark-blue/message_critical.svg);
     messagebox-information-icon: url(:/dark-blue/message_information.svg);
     messagebox-question-icon: url(:/dark-blue/message_question.svg);
