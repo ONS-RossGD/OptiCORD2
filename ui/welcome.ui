@@ -67,7 +67,7 @@
       </font>
      </property>
      <property name="text">
-      <string>To get started, please choose an existing OptiCORD change tracker to open, or create a new one!</string>
+      <string>To get started, please choose an existing OptiCORD change tracker to open or create a new one.</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
