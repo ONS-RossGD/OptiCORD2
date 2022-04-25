@@ -9,6 +9,9 @@ from ui.new import NewTracker
 from datetime import datetime
 from ui.recovery import RecoveryPopup
 from util import StandardFormats, TempFile
+import logging
+
+log = logging.getLogger('OptiCORD')
 
 
 def set_window_title(title: str) -> None:
@@ -54,6 +57,7 @@ def open_file(parent: QObject) -> None:
                                               QSettings().value('last_open_location', ''), '*.opticord')
     if not filepath:
         return  # return if user closes dialog without selecting a file
+    log.debug(f'Opening from existing file: {filepath}')
     QSettings().setValue('last_open_location',  # update last_open_location
                          '/'.join(filepath.split('/')[:-1]))
     # init the temp file for future editing
@@ -63,7 +67,7 @@ def open_file(parent: QObject) -> None:
     with h5py.File(TempFile.path, 'r+') as store:
         # TODO remove the print
         name = store.attrs['name']
-        [print(f'{i}: {j}') for (i, j) in store.attrs.items()]
+        [log.debug(f'{i}: {j}') for (i, j) in store.attrs.items()]
     TempFile.manager.unlock()
     # redirect to activity window
     parent.window().setCentralWidget(ActiveWidget(parent.window()))

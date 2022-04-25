@@ -14,6 +14,9 @@ import numpy as np
 import pandas as pd
 from util import TempFile
 from validation import InvalidVisualisation, validate_date, validate_filepath, validate_meta, validate_unique
+import logging
+
+log = logging.getLogger('OptiCORD')
 
 
 class DeleteConfirmation(QDialog):
@@ -314,6 +317,7 @@ class VisualisationParser():
     def parse(self) -> None:
         """Attempt to parse csv from filepath as an
         OptiCORD Visualisation. Returns a Visualisation."""
+        log.debug(f'Parsing visualisation "{self.name}"')
         # create info through a preliminary read
         self._prelim_read()
         # determine if file has been modified

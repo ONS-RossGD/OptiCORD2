@@ -3,8 +3,10 @@ from PyQt5.QtCore import Qt, QObject
 from PyQt5.QtWidgets import QApplication, QDialog, QMessageBox, QWidget
 from PyQt5.uic import loadUi
 import os
-
+import logging
 from util import CharacterSet, NameValidator
+
+log = logging.getLogger('OptiCORD')
 
 
 class NewTracker(QDialog, object):
@@ -42,6 +44,7 @@ class NewTracker(QDialog, object):
             self.desc = self.description_edit.toPlainText()
         else:
             self.desc = f'Ask user "{os.getlogin()}" for more info.'
+        log.debug(f'Created new tracker: {self.name}')
         # return default ok action if everything is valid
         return super().accept()
 
@@ -70,11 +73,24 @@ class NewPosition(QDialog, object):
             w.style().unpolish(w)
             w.style().polish(w)
 
+    def _vs_in_name(self) -> bool:
+        """Checks the name string to ensure "vs" is not part of it."""
+        name = self.name_edit.text()
+        if name == 'vs':
+            return True
+        if ' vs ' in name:
+            return True
+        if name[:3] == 'vs ':
+            return True
+        if name[-3:] == ' vs':
+            return True
+        return False
+
     def accept(self):
         """Overwritten the default accept function to validate
         criteria needed to create new position"""
-        if not self.name_edit.text() or \
-                self.name_edit.text() in self.existing:
+        if not self.name_edit.text() or self.name_edit.text()\
+                in self.existing or self._vs_in_name():
             # update property to reflect invalid input
             self.name_edit.setProperty("invalid_input", "true")
             # style has to be unpolished and polished to update
@@ -87,6 +103,12 @@ class NewPosition(QDialog, object):
                                            'An position with that name already exists'
                                            ' in this change tracker, your new position'
                                            ' must have a unique name.')
+            elif self._vs_in_name():
+                # return a popup explaining vs can't be in name
+                return QMessageBox.warning(self,
+                                           'Invalid position name',
+                                           '" vs " cannot be a part of your'
+                                           'position name.')
             else:
                 return QApplication.beep()  # makes warning noise
         # set name property to be the text given in name_edit
@@ -96,5 +118,6 @@ class NewPosition(QDialog, object):
             self.desc = self.description_edit.toPlainText()
         else:
             self.desc = f'Ask user "{os.getlogin()}" for more info.'
+        log.debug(f'Created new position: {self.name}')
         # return default ok action if everything is valid
         return super().accept()

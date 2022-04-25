@@ -1,12 +1,19 @@
 from abc import ABC, abstractmethod
+import logging
 import pandas as pd
 import h5py
 import warnings
 from util import MetaDict, TempFile
+log = logging.getLogger('OptiCORD')
 
 
 class InvalidComparison(Exception):
     """Raised when a comparison cannot be made between pre and post"""
+
+    def __init__(self, full, short) -> None:
+        super().__init__(full)
+        self.full = full
+        self.short = short
 
 
 class Comparison(ABC):
@@ -43,7 +50,8 @@ class Comparison(ABC):
         if set(self.pre_meta["Periodicities"]) != set(
                 self.post_meta["Periodicities"]):
             # TODO finalise this warning
-            warnings.warn("Periodicities are not equal")
+            warnings.warn("Periodicities do not match")
+            log.warning('Periodicities do not match')
             self.differences = True
             return False
         else:
@@ -54,8 +62,11 @@ class Comparison(ABC):
         # First check if dimensions are equal ignoring the order
         if set(self.pre_meta["Dimensions"]) != set(
                 self.post_meta["Dimensions"]):
-            # TODO better Exception message
-            raise InvalidComparison("Pre and post have different dimensions")
+            raise InvalidComparison(f'{self.pre_position} has dimensions'
+                                    f' {self.pre_meta["Dimensions"]}, while '
+                                    f'{self.post_position} has dimensions '
+                                    f'{self.post_meta["Dimensions"]}',
+                                    "Different dimensions")
         # for some reason dimensions needs to be converted to a list
         # even though it already appears to be one
         # check if dimensions are in the same order, if not warn
@@ -70,16 +81,23 @@ class Comparison(ABC):
         """Main function to compare pre and post and save the difference
         dataframe to the .opticord file."""
         for per in self.periodicities:
+            log.debug(f'comparing periodicity {per}')
+            log.debug('reading pre')
             self.pre = self._read(f'{self.pre_path}/{per}')
+            log.debug('reading post')
             self.post = self._read(f'{self.post_path}/{per}')
             # reorder the pre df if diff dims was identified
             if self.diff_dims:
+                log.warning('dimensions in different order, reordering')
                 self.pre = self.pre.reorder_levels(
                     list(self.post_meta["Dimensions"]), axis=0)
             # create the difference and nan dataframes
+            log.debug('calculating difference dataframes')
             self.diff, self.nans = self._calc_difference()
             # check for differences
+            log.debug('checking for differences')
             self._check_differences()
+            log.debug('saving to file')
             # TODO ensure " vs " cannot be included in position name
             self.save_to_file(f'comparisons/{self.pre_position}'
                               f' vs {self.post_position}/{self.vis}/{per}')

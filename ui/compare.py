@@ -1,4 +1,5 @@
 from enum import auto
+import logging
 import os
 from typing import List
 from PyQt5.QtGui import QStandardItem, QStandardItemModel, QPixmap, QPainter, QFont, QFontMetrics
@@ -11,6 +12,8 @@ import pandas as pd
 from comparison import InvalidComparison, PandasComparison
 from export import Export, ExportOptions
 from util import CharacterSet, NameValidator, StandardFormats, TempFile, Switch
+
+log = logging.getLogger('OptiCORD')
 
 
 class ComparisonSignals(QObject):
@@ -72,10 +75,16 @@ class ComparisonItem(QStandardItem):
         self.setToolTip(tip)
 
     @pyqtSlot(str)
-    def update_text(self, text: str) -> None:
+    def update_name(self, text: str) -> None:
         """pyqtSlot to update item text accessible to operations
         in other threads"""
         self.setText(text)
+
+    @pyqtSlot(str)
+    def update_msg(self, msg: str) -> None:
+        """pyqtSlot to update item text accessible to operations
+        in other threads"""
+        self.msg = msg
 
 
 class ComparisonList(QListView):
@@ -493,6 +502,8 @@ class CompareWidget(QWidget, object):
     def load_visualisations(self):
         """Loads all visualisations from selected positions into
         the ComparisonList"""
+        log.debug('loading visualisations into comparison list for '
+                  f'{self.pre_dropdown.currentText()} vs {self.post_dropdown.currentText()}')
         with h5py.File(TempFile.path, 'r+') as store:
             pre_vis = list(store[
                 f'positions/{self.pre_dropdown.currentText()}'].keys())
@@ -587,16 +598,19 @@ class CompareWidget(QWidget, object):
     def compare_items(self, items: list) -> None:
         """Starts running ComparisonWorkers for checked list items that
         have not yet been compared."""
+        log.debug(f'attempting comparison of {[i.name for i in items]}')
         self.register = []
         self.lock(self.compare_button)
+        log.debug(f'comparing {self.pre_dropdown.currentText()} vs '
+                  f'{self.post_dropdown.currentText()}')
         for item in items:
             self.comparison_worker = ComparisonWorker(
                 self.register,
                 self.pre_dropdown.currentText(),
                 self.post_dropdown.currentText(),
                 item)
-            QThreadPool.globalInstance().start(self.comparison_worker)
             self.comparison_worker.signals.finished.connect(self.try_unlock)
+            QThreadPool.globalInstance().start(self.comparison_worker)
 
     def export_items(self, export_folder: str):
         """Starts running ExportWorkers for checked list items."""
@@ -608,7 +622,7 @@ class CompareWidget(QWidget, object):
                 desc = f'Ask {os.getlogin()} for more info'
             desc = desc.split('\n')
             return desc
-
+        log.debug('attempting export')
         self.register = []
         items = self.comp_list.get_checked_items()['Item'].tolist()
         self.lock(self.export_button)
@@ -697,20 +711,31 @@ class ComparisonWorker(QRunnable):
         self.reg.append(self)
         self.signals = ComparisonSignals()
         self.signals.update_msg.connect(
-            lambda text: self.item.update_text(text))
+            lambda text: self.item.update_msg(text))
         self.signals.update_tooltip.connect(
             lambda text: self.item.update_tooltip(text))
 
     def run(self) -> None:
         """"""
         try:
+            log.debug(f'Attempting comparison for {self.item.name}')
             self.item.state = ComparisonItem.PROCESSING
             comp = PandasComparison(self.pre, self.post, self.item)
             comp.compare()
             self.item.state = ComparisonItem.SUCCESS
+            log.debug(f'{self.item.name} compared successfully')
         except InvalidComparison as e:
+            log.error(
+                f'{self.item.name} was invalid with error: {e.short}')
+            log.debug(e.full)
             self.signals.update_tooltip.emit(e.full)
             self.signals.update_msg.emit(e.short)
+            self.item.state = ComparisonItem.FAILURE
+        except:
+            log.exception(
+                f'{self.item.name} encountered error during comparison:\n')
+            self.signals.update_msg.emit(
+                'Failed to compare, contact OptiCORD team')
             self.item.state = ComparisonItem.FAILURE
         finally:
             self.reg.remove(self)
@@ -740,24 +765,29 @@ class ExportWorker(QRunnable):
         self.reg.append(self)
         self.signals = ExportSignals()
         self.signals.update_msg.connect(
-            lambda text: self.item.update_text(text))
+            lambda text: self.item.update_msg(text))
         self.signals.update_tooltip.connect(
             lambda text: self.item.update_tooltip(text))
 
     def run(self) -> None:
         """"""
         try:
+            log.debug(f'Attempting export for {self.item.name}')
             self.item.state = ComparisonItem.EXPORTING
             exporter = Export(self.desc, self.pre, self.post,
                               self.exp_fol, self.item)
             if exporter.should_skip:
-                print(f'Skipping export of {self.item.name}')
+                log.info(f'Skipped export of {self.item.name}'
+                         ' (no differences)')
             else:
                 exporter.export()
             self.item.state = ComparisonItem.SUCCESS
-        except InvalidComparison as e:
-            self.signals.update_tooltip.emit(e.full)
-            self.signals.update_msg.emit(e.short)
+            log.debug(f'{self.item.name} exported successfully')
+        except:
+            log.exception(
+                f'{self.item.name} encountered error during export:\n')
+            self.signals.update_msg.emit(
+                'Failed to export, contact OptiCORD team')
             self.item.state = ComparisonItem.FAILURE
         finally:
             self.reg.remove(self)

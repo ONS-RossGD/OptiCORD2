@@ -1,4 +1,5 @@
 
+import logging
 from PyQt5.QtGui import QValidator, QPainter
 from PyQt5.QtCore import QDir, QObject, QReadWriteLock, QTemporaryFile, QPropertyAnimation, QRectF, QSize, Qt, pyqtProperty
 from shutil import copyfile
@@ -7,6 +8,8 @@ import os
 import json
 import h5py
 from test_scripts import visualisation_compression_test
+
+log = logging.getLogger('OptiCORD')
 
 
 class StandardFormats():
@@ -39,14 +42,13 @@ class TempFile:
             QDir.temp().absolutePath()) if filename.startswith("OptiCORD-")]
         if len(existing_files) > 1:
             # TODO raise error?
-            print('Too many unexpected files')
+            log.error('Too many unexpected files')
         if existing_files:
             TempFile.recovery_path = QDir.temp().absoluteFilePath(
                 existing_files[0])
 
     def create_new() -> None:
         """Creates a brand new temp file"""
-        print('creating new temp file')
         f = QTemporaryFile(QDir.temp().absoluteFilePath(
             'OptiCORD-XXXXXX.tmp'))
         # open and close the temp file to ensure it gets a fileName
@@ -58,7 +60,7 @@ class TempFile:
 
     def create_from_existing(existing_path: str) -> None:
         """Creates a temp file by copying an existing file"""
-        print('creating temp file from existing')
+        log.debug('creating temp file from existing')
         f = QTemporaryFile(QDir.temp().absoluteFilePath(
             'OptiCORD-XXXXXX.tmp'))
         # open and close the temp file to ensure it gets a fileName
@@ -72,6 +74,7 @@ class TempFile:
 
     def recover() -> None:
         """Opens the recovery file"""
+        log.debug('Opening recovered file')
         TempFile.path = TempFile.recovery_path
         # lock and unlock so that save changes warning appears
         TempFile.manager.lockForWrite()
@@ -80,6 +83,7 @@ class TempFile:
     def save_to_location(filepath: str) -> None:
         """Saves the temp file to a specified filepath, overwriting any
         existing files in that path."""
+        log.debug(f'Saving to location: {filepath}')
         TempFile.manager.lockForWrite()
         copyfile(TempFile.path, filepath)
         TempFile.manager.unlock()

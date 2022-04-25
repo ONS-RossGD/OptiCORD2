@@ -11,6 +11,9 @@ from distutils.util import strtobool
 import pandas as pd
 import numpy as np
 import xlsxwriter
+import logging
+
+log = logging.getLogger('OptiCORD')
 
 
 class ExportOptionAction(Enum):
@@ -175,11 +178,13 @@ class Export():
     def export(self):
         """Export the comparison data to an xlsx file using user 
         specified settings."""
+        log.debug(f'Exporting {self.item.name}')
         self.wb = xlsxwriter.Workbook(f'{self.exp_fol}/{self.item.name}.xlsx')
         self._create_formats()
         # keep track of whether or not we've written anything to the file
         self.written = False
         for per in self.meta['periodicities']:
+            log.debug(f'Exporting periodicity {per}')
             per_path = f'{self.comp_path}/{per}'
             # if skip_no_diffs option is checked and the periodicity
             # has no differences then skip exporting it
@@ -189,16 +194,22 @@ class Export():
             # if it does have differences then read and process the pre and
             # post dataframes then check again for differences as they may
             # not have differences within the filtered dates.
+            log.debug('Reading pre')
             pre = self._read_vis(
                 f'positions/{self.pre}/{self.item.name}/{per}')
+            log.debug('Reading post')
             post = self._read_vis(
                 f'positions/{self.post}/{self.item.name}/{per}')
+            log.debug('Processing pre')
             post = self._process_vis(post, per)
+            log.debug('Processing post')
             pre = self._process_vis(pre, per)
             if self.options.date_filter() and self.options.skip_no_diffs() and \
                     not self._has_differences(pre, post):
                 continue
+            log.debug('Reading compared')
             diff, nans = self._get_compared(per_path)
+            log.debug('Processing compared')
             pre, post, diff = self._process_comparison(
                 pre, post, diff, nans, per)
             if self.options.pre_sheet():
@@ -209,8 +220,8 @@ class Export():
                                   post, self.post_style)
             self._write_sheet(f'Differences ({per})', diff, self.diff_style,
                               difference=True)
-            if self.options.meta_sheet():
-                self._write_meta()
+        if self.options.meta_sheet():
+            self._write_meta()
         self.wb.close()
         # if nothing has been written in the file, delete it
         if not self.written:
@@ -456,6 +467,8 @@ class Export():
                      difference: bool = False) -> None:
         """Creates a new sheet with given name and writes 'df' as a 
         formatted table."""
+        log.debug(f'Writing sheet: {name}')
+
         def _format() -> list:
             format_list = []
             for idx in df.index.names:
@@ -532,6 +545,7 @@ class Export():
 
     def _write_meta(self) -> None:
         """Write the metadata sheet for the comparison."""
+        log.debug('Writing metadata')
         pre_meta = MetaDict(f'positions/{self.pre}/{self.item.name}')
         post_meta = MetaDict(f'positions/{self.post}/{self.item.name}')
         ws = self.wb.add_worksheet('MetaData')

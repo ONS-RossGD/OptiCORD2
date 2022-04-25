@@ -3,6 +3,9 @@
 
 __version__ = '2.0.0'
 
+import logging
+from logging.handlers import RotatingFileHandler
+import os
 import sys
 import ctypes
 import warnings
@@ -14,6 +17,22 @@ from ui.resources import resource_init  # looks redundant but isn't
 from util import TempFile
 from tables import NaturalNameWarning
 
+log = logging.getLogger('OptiCORD')
+
+
+def setup_logging():
+    """Sets up logging module for use later on"""
+    log.setLevel(logging.DEBUG)
+    rf = RotatingFileHandler(f'{os.getcwd()}/logs/{os.getlogin()}.log',
+                             maxBytes=100000, backupCount=1)
+    rf.setLevel(logging.DEBUG)
+    fmt = logging.Formatter('%(asctime)s %(threadName)-12s'
+                            ' %(levelname)-8s: %(message)s',
+                            datefmt='%m-%d %H:%M')
+    rf.setFormatter(fmt)
+    log.addHandler(rf)
+    log.debug('----------------------NEW SESSION----------------------')
+
 
 def main():
     """Main loop"""
@@ -22,6 +41,7 @@ def main():
     app.setApplicationName("OptiCORD")
     app.setOrganizationName("ONS")
     app.setOrganizationDomain("ons.gov.uk")
+    setup_logging()
     # TODO python hack to set task bar icon, may not be needed in exe
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
         f'ONS.OptiCORD.{__version__}')
@@ -42,7 +62,7 @@ def main():
     try:
         sys.exit(app.exec_())
     except:  # TODO catch correct Exception.
-        print("Exiting")
+        log.exception('System excited with exception:\n')
 
 
 if __name__ == "__main__":
