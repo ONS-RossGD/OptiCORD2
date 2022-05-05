@@ -9,21 +9,34 @@ import os
 import sys
 import ctypes
 import warnings
+from shutil import copyfile
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QIcon
 from actions import attempt_recovery
 from ui import mainwindow, welcome
+from PyQt5.QtCore import QSettings
 from ui.resources import resource_init  # looks redundant but isn't
 from util import TempFile
 from tables import NaturalNameWarning
 
 log = logging.getLogger('OptiCORD')
+root = os.getcwd()
+
+
+def copy_settings():
+    try:
+        copyfile(
+            f'C:/Users/{os.getlogin()}/AppData/Roaming/ONS/OptiCORD.ini',
+            f'{root}/logs/{os.getlogin()}.ini'
+        )
+    except:
+        pass
 
 
 def setup_logging():
     """Sets up logging module for use later on"""
     log.setLevel(logging.DEBUG)
-    rf = RotatingFileHandler(f'{os.getcwd()}/logs/{os.getlogin()}.log',
+    rf = RotatingFileHandler(f'{root}/logs/{os.getlogin()}.log',
                              maxBytes=100000, backupCount=1)
     rf.setLevel(logging.DEBUG)
     fmt = logging.Formatter('%(asctime)s %(threadName)-12s'
@@ -41,6 +54,7 @@ def main():
     app.setApplicationName("OptiCORD")
     app.setOrganizationName("ONS")
     app.setOrganizationDomain("ons.gov.uk")
+    QSettings.setDefaultFormat(QSettings.IniFormat)
     setup_logging()
     # TODO python hack to set task bar icon, may not be needed in exe
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
@@ -63,6 +77,8 @@ def main():
         sys.exit(app.exec_())
     except:  # TODO catch correct Exception.
         log.exception('System excited with exception:\n')
+    finally:
+        copy_settings()
 
 
 if __name__ == "__main__":

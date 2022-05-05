@@ -214,7 +214,7 @@ class PandasComparison(Comparison):
         diff_df = diff_df.fillna('.')
         # return the orignal difference dataframe and a
         # dataframe of just the configured nan values
-        return (diff_df_unconfigured, diff_df[nans])
+        return (diff_df_unconfigured, diff_df[nans].astype(str))
 
     def _check_differences(self) -> bool:
         """Returns true if differences are found between pre and post,
@@ -238,12 +238,12 @@ class PandasComparison(Comparison):
             TempFile.path,
             f'{path}/data',
             mode='a', complib='blosc:zlib', complevel=9,
-            format='table')
+            format='fixed')
         self.nans.to_hdf(
             TempFile.path,
             f'{path}/nans',
             mode='a', complib='blosc:zlib', complevel=9,
-            format='table')
+            format='fixed')
         # save the metadata
         with h5py.File(TempFile.path, 'r+') as store:
             comp = store[path]
