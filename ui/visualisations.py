@@ -190,6 +190,11 @@ class VisualisationList(QListView):
             TempFile.manager.lockForWrite()
             with h5py.File(TempFile.path, 'r+') as store:
                 del(store[f'positions/{self.position}/{item.text()}'])
+                for comp in store['comparisons'].keys():
+                    poss = comp.split(' vs ')
+                    if self.position in poss:
+                        if item.text() in store[f'comparisons/{comp}'].keys():
+                            del(store[f'comparisons/{comp}/{item.text()}'])
             TempFile.manager.unlock()
             self.remove_existing(item.text())
             self.model.removeRow(self.currentIndex().row())
