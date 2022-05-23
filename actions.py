@@ -65,7 +65,6 @@ def open_file(parent: QObject) -> None:
     # read the h5 file
     TempFile.manager.lockForRead()
     with h5py.File(TempFile.path, 'r+') as store:
-        # TODO remove the print
         name = store.attrs['name']
         [log.debug(f'{i}: {j}') for (i, j) in store.attrs.items()]
     TempFile.manager.unlock()

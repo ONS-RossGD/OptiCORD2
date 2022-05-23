@@ -170,7 +170,6 @@ class Export():
     def should_skip(self) -> bool:
         """Decide whether or not to skip exporting based on difference
         meta data and user settings"""
-        print(f"{self.item.name} differences: {self.meta['differences']}")
         if not self.meta['differences'] and self.options.skip_no_diffs():
             return True
         else:
@@ -189,8 +188,6 @@ class Export():
             per_path = f'{self.comp_path}/{per}'
             # if skip_no_diffs option is checked and the periodicity
             # has no differences then skip exporting it
-            print(
-                f"{self.item.name} {per} differences: {MetaDict(per_path)['different']}")
             if self.options.skip_no_diffs() and \
                     not MetaDict(per_path)['different']:
                 continue
@@ -337,6 +334,9 @@ class Export():
                             per: str) -> pd.DataFrame:
         """Processes the comparison data and returns it ready to be written
         in a sheet."""
+        # make sure pre and post have the same index order
+        pre, post = self._align_index(pre, post)
+        # filter out the chosen dates is opted for
         if self.options.date_filter():
             diff = self._apply_date_filter(diff)
             nans = self._apply_date_filter(nans)
@@ -352,6 +352,12 @@ class Export():
         if self.options.excl_zero_series():
             pre, post, diff = self._drop_zero_series(pre, post, diff)
         return pre, post, diff
+
+    def _align_index(self, pre: pd.DataFrame, post: pd.DataFrame) -> tuple:
+        """Reindex the pre dataframe so that it's in the same order as
+        post."""
+        pre = pre.reorder_levels(post.index.names, axis=0)
+        return pre, post
 
     def _drop_zero_series(self, pre: pd.DataFrame, post: pd.DataFrame,
                           diff: pd.DataFrame) -> tuple:

@@ -113,8 +113,6 @@ class ComparisonList(QListView):
             self.viewport().update)
         # connect click with checkbox
         self.clicked.connect(self.toggle_item_check)
-        self.model.itemChanged.connect(
-            lambda a: print(a))
 
     @pyqtSlot(QModelIndex)
     def toggle_item_check(self, index) -> None:
