@@ -170,6 +170,7 @@ class Export():
     def should_skip(self) -> bool:
         """Decide whether or not to skip exporting based on difference
         meta data and user settings"""
+        print(f"{self.item.name} differences: {self.meta['differences']}")
         if not self.meta['differences'] and self.options.skip_no_diffs():
             return True
         else:
@@ -188,6 +189,8 @@ class Export():
             per_path = f'{self.comp_path}/{per}'
             # if skip_no_diffs option is checked and the periodicity
             # has no differences then skip exporting it
+            print(
+                f"{self.item.name} {per} differences: {MetaDict(per_path)['different']}")
             if self.options.skip_no_diffs() and \
                     not MetaDict(per_path)['different']:
                 continue
@@ -302,13 +305,14 @@ class Export():
     def _has_differences(self, pre: pd.DataFrame, post: pd.DataFrame) -> bool:
         """Returns true if differences are found between pre and post,
         false if not."""
-        # use pandas testing assertion to check for any differences
-        # e.g. in shape, index/columns and values
-        try:
-            pd.testing.assert_frame_equal(pre, post, check_like=True)
-            return False
-        except AssertionError:
+        # independantly check the columns as pd.equals only checks shape
+        # and values
+        if self.pre.columns.tolist() != self.post.columns.tolist():
             return True
+        # independantly check the index for the same reasons as above
+        if not self.pre.sort_index().index.equals(self.post.sort_index().index):
+            return True
+        return not self.post.sort_index().equals(self.pre.sort_index())
 
     def _get_compared(self, path: str) -> tuple:
         """Read the comparison data dataframe as well as the nans dataframe
@@ -527,13 +531,11 @@ class Export():
 
         self.written = True
         ws = self.wb.add_worksheet(name)
-        table_name = name.replace(' ', '_').replace('(', '').replace(')', '')
         column_format = _format()
         idx_cols = df.index.names
         df = df.reset_index()
         nrows, ncols = df.values.shape
         ws.add_table(0, 0, nrows, ncols-1, {
-            'name': table_name,
             'columns': column_format,
             'data': df.values,
             'style': table_style

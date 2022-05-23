@@ -88,6 +88,7 @@ class TempFile:
         copyfile(TempFile.path, filepath)
         TempFile.manager.unlock()
         TempFile.saved_path = filepath
+        TempFile.manager.changed = False
 
     def delete() -> None:
         """Delete's the temp file (if it exists)"""

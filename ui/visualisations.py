@@ -52,6 +52,8 @@ class VisualisationList(QListView):
     pool: QThreadPool
     existing: List[str]
     position: str
+    lock = pyqtSignal()
+    unlock = pyqtSignal()
 
     def __init__(self, parent: QTabWidget) -> None:
         super(QListView, self).__init__(parent)
@@ -97,14 +99,25 @@ class VisualisationList(QListView):
             menu.exec(event.globalPos())
         return super().eventFilter(source, event)
 
+    @pyqtSlot()
+    def determine_unlock(self) -> None:
+        """Determine whether or not to emit unlock signal"""
+        unlock = True
+        items = [self.model.item(i) for i in range(1, self.model.rowCount())]
+        for item in items:
+            if item.state <= VisualisationFile.LOADING:
+                unlock = False
+        if unlock:
+            self.unlock.emit()
+
     @pyqtSlot(str)
     def add_file(self, file: str) -> None:
         """Add the file to the pool and execute when thread is
         available"""
         # make sure visualisation list is showing
         self.show_in_tabs()
-        # create a new worker for the file
         worker = VisualisationWorker(file, self)
+        worker.signals.finished.connect(self.determine_unlock)
         # add item to the list
         self.model.appendRow(worker.item)
         # check filepath of the worker, must be done before threading
@@ -112,6 +125,7 @@ class VisualisationList(QListView):
         # validation when run in parallel
         if worker.check_filepath():
             # add worker to the pool and execute when thread is available
+            self.lock.emit()
             self.pool.start(worker)
 
     def read_from_file(self) -> None:
@@ -569,6 +583,7 @@ class VisualisationSignals(QObject):
     update_tooltip = pyqtSignal(str)
     update_name = pyqtSignal(str)
     update_msg = pyqtSignal(str)
+    finished = QtCore.pyqtSignal()
 
 
 class VisualisationWorker(QRunnable):
@@ -608,6 +623,12 @@ class VisualisationWorker(QRunnable):
             self.signals.update_tooltip.emit(e.full)
             self.signals.update_msg.emit(e.short)
             self.item.state = VisualisationFile.FAILURE
+        except:
+            log.exception(f'{self.item.filepath} failed to check filepath due'
+                          ' to an unexpected error:\n')
+            self.signals.update_msg.emit(
+                'Failed to upload, contact OptiCORD team')
+            self.item.state = VisualisationFile.FAILURE
         return False
 
     def run(self):
@@ -621,3 +642,11 @@ class VisualisationWorker(QRunnable):
             self.signals.update_tooltip.emit(e.full)
             self.signals.update_msg.emit(e.short)
             self.item.state = VisualisationFile.FAILURE
+        except:
+            log.exception(f'{self.item.filepath} failed to upload due'
+                          ' to an unexpected error:\n')
+            self.signals.update_msg.emit(
+                'Failed to upload, contact OptiCORD team')
+            self.item.state = VisualisationFile.FAILURE
+        finally:
+            self.signals.finished.emit()

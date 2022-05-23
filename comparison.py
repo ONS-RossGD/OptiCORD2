@@ -96,7 +96,9 @@ class Comparison(ABC):
             self.diff, self.nans = self._calc_difference()
             # check for differences
             log.debug('checking for differences')
-            self._check_differences()
+            if self._check_differences():
+                log.debug(f'differences found in {per}')
+                self.differences = True
             log.debug('saving to file')
             # TODO ensure " vs " cannot be included in position name
             self.save_to_file(f'comparisons/{self.pre_position}'
@@ -219,15 +221,14 @@ class PandasComparison(Comparison):
     def _check_differences(self) -> bool:
         """Returns true if differences are found between pre and post,
         false if not."""
-        # use pandas testing assertion to check for any differences
-        # e.g. in shape, index/columns and values
-        try:
-            pd.testing.assert_frame_equal(self.pre, self.post, check_like=True)
-            return False
-        except AssertionError as e:
-            # TODO maybe return the type of difference?
-            self.differences = True
+        # independantly check the columns as pd.equals only checks shape
+        # and values
+        if self.pre.columns.tolist() != self.post.columns.tolist():
             return True
+        # independantly check the index for the same reasons as above
+        if not self.pre.sort_index().index.equals(self.post.sort_index().index):
+            return True
+        return not self.post.sort_index().equals(self.pre.sort_index())
 
     def save_to_file(self, path: str) -> None:
         TempFile.manager.lockForWrite()

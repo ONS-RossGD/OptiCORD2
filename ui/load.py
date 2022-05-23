@@ -6,12 +6,12 @@ import re
 from PyQt5.QtGui import QDragEnterEvent, QDropEvent
 import pandas as pd
 from typing import List
-from PyQt5.QtCore import QEvent, QObject, QSettings, QUrl, Qt, pyqtSignal
+from PyQt5.QtCore import QEvent, QObject, QSettings, QUrl, Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QDialog, QFileDialog, QListView, QWidget
 from PyQt5.uic import loadUi
 from uuid import uuid4
 from ui.new import NewPosition
-from ui.visualisations import VisualisationList
+from ui.visualisations import VisualisationFile, VisualisationList
 from util import StandardFormats, TempFile
 import h5py
 
@@ -137,6 +137,8 @@ class LoadWidget(QWidget, object):
             lambda i: self.vis_list.change_position(
                 self.position_dropdown.itemText(i)))
         self.drag_drop_tab.file_added.connect(self.vis_list.add_file)
+        self.vis_list.lock.connect(self.lock)
+        self.vis_list.unlock.connect(self.unlock)
 
     def check_drop(self, urls: List[QUrl]) -> bool:
         """Check that all given files are local files of 
@@ -278,3 +280,17 @@ class LoadWidget(QWidget, object):
         if self.load_tabs.count() > 1:
             self.load_tabs.removeTab(0)
         self.load_tabs.setEnabled(False)
+
+    @ pyqtSlot()
+    def lock(self) -> None:
+        """Locks the Load page UI"""
+        self.position_dropdown.setEnabled(False)
+        self.new_position.setEnabled(False)
+        self.import_position.setEnabled(False)
+
+    @ pyqtSlot()
+    def unlock(self) -> None:
+        """Unlocks the Load page UI"""
+        self.position_dropdown.setEnabled(True)
+        self.new_position.setEnabled(True)
+        self.import_position.setEnabled(True)

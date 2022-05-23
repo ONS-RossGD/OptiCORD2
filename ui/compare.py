@@ -2,16 +2,16 @@ from enum import auto
 import logging
 import os
 from typing import List
-from PyQt5.QtGui import QStandardItem, QStandardItemModel, QPixmap, QPainter, QFont, QFontMetrics
+from PyQt5.QtGui import QStandardItem, QStandardItemModel, QPixmap, QPainter, QFont, QFontMetrics, QShowEvent
 from PyQt5.uic import loadUi
-from PyQt5.QtCore import QEvent, QObject, QSettings, QModelIndex, QPoint, QRectF, Qt, pyqtSlot, QDate, QRunnable, pyqtSignal, QThreadPool
+from PyQt5.QtCore import QEvent, QObject, QSettings, QModelIndex, QPoint, QRectF, Qt, pyqtSlot, QRunnable, pyqtSignal, QThreadPool
 from PyQt5.Qt import QSvgRenderer
-from PyQt5.QtWidgets import QAbstractItemView, QListView, QTreeView, QWidget, QStyledItemDelegate, QStyleOptionViewItem, QDateEdit, QFileDialog, QMessageBox, QPushButton, QDialog, QApplication
+from PyQt5.QtWidgets import QAbstractItemView, QListView, QTreeView, QWidget, QStyledItemDelegate, QStyleOptionViewItem, QFileDialog, QMessageBox, QPushButton, QDialog, QApplication
 import h5py
 import pandas as pd
 from comparison import InvalidComparison, PandasComparison
 from export import Export, ExportOptions
-from util import CharacterSet, NameValidator, StandardFormats, TempFile, Switch
+from util import CharacterSet, NameValidator, StandardFormats, TempFile
 
 log = logging.getLogger('OptiCORD')
 
@@ -28,13 +28,19 @@ class SelectAllItem(QStandardItem):
 
     def __init__(self) -> None:
         super(QStandardItem, self).__init__("(Select All)")
+        # Set to true to render the checkbox, but then false so that
+        # the checkbox's signals don't interfere with our overrides
         self.setCheckable(True)
+        self.setCheckable(False)
         self.setCheckState(2)
+        self.state = ComparisonItem.SELECT_ALL
+        self.name = 'Select All'
 
 
 class ComparisonItem(QStandardItem):
     """Custom QListWidget item for comparison items"""
     # states
+    SELECT_ALL = auto()
     LONELY = auto()
     QUEUED = auto()
     PROCESSING = auto()
@@ -105,15 +111,19 @@ class ComparisonList(QListView):
         # update viewport when svg render frame changes
         self.deligate.loading.repaintNeeded.connect(
             self.viewport().update)
-        # connect double click with checkbox
-        self.doubleClicked.connect(self.toggle_item_check)
+        # connect click with checkbox
+        self.clicked.connect(self.toggle_item_check)
+        self.model.itemChanged.connect(
+            lambda a: print(a))
 
     @pyqtSlot(QModelIndex)
     def toggle_item_check(self, index) -> None:
         """Checks or unchecks an item given by QModelIndex"""
         row = index.row()
         item = self.model.item(row)
-        if item.isCheckable():
+        if not item.isSelectable():
+            return
+        if item.state != ComparisonItem.LONELY:
             if item.checkState() == 0 or item.checkState() == 1:
                 item.setCheckState(2)
             elif item.checkState() == 2:
@@ -127,7 +137,7 @@ class ComparisonList(QListView):
         self.model.blockSignals(True)
         # Get all checkable items
         checkable = [self.model.item(i) for i in range(1, self.model.rowCount())
-                     if self.model.item(i).isCheckable()]
+                     if self.model.item(i).state != ComparisonItem.LONELY]
         # Filter new list of only items that are checked
         checked = list(filter(lambda i: i.checkState(), checkable))
         if item is self.select_all:  # if select all's state is changed
@@ -172,7 +182,12 @@ class ComparisonList(QListView):
             # init the item
             item = ComparisonItem(vis)
             if vis in common:
+                # set checkable to true so that the checkbox gets rendered
                 item.setCheckable(True)
+                # then turn it to false so that the checkbox cannot control
+                # its own state as we'll override it with the clicked event
+                # of the ComparisonList.
+                item.setCheckable(False)
                 item.setCheckState(2)
                 if item.name in existing:
                     item.state = ComparisonItem.SUCCESS
@@ -180,12 +195,11 @@ class ComparisonList(QListView):
                                          f'/{item.name}')
                     item.update_diffs(meta['differences'])
             else:
-                item.state = ComparisonItem.LONELY
-                item.setEnabled(False)
                 if vis in pre:
-                    item.msg = f'Missing in {post_name}'
+                    missing = post_name
                 if vis in post:
-                    item.msg = f'Missing in {pre_name}'
+                    missing = pre_name
+                item.set_lonely(missing)
             # add item to the list
             self.model.appendRow(item)
 
@@ -233,6 +247,23 @@ class ComparisonList(QListView):
         df['State'] = [i.state for i in df['Item']]
         return df
 
+    @pyqtSlot()
+    def lock_selection(self) -> None:
+        """Ensures the state of the comparison list cannot be changed"""
+        self.select_all.setSelectable(False)
+        self.locked = [self.model.item(i)
+                       for i in range(1, self.model.rowCount())]
+        for i in self.locked:
+            i.setSelectable(False)
+
+    @pyqtSlot()
+    def unlock_selection(self) -> None:
+        """Allows comparison list items to have their state changed again"""
+        self.select_all.setSelectable(True)
+        for i in self.locked:
+            i.setSelectable(True)
+        self.locked = []
+
 
 class ComparisonDeligate(QStyledItemDelegate):
     """Item deligate for setting progress icons"""
@@ -272,10 +303,10 @@ class ComparisonDeligate(QStyledItemDelegate):
         option = option.__class__(option)
         # get bounding box of list items text
         vgap = 4
-        if item.isCheckable():
-            hgap = 30
-        else:
+        if item.state == ComparisonItem.LONELY:
             hgap = 10
+        else:
+            hgap = 30
         font_metrics = QFontMetrics(option.font)
         rect = font_metrics.boundingRect(index.data())
         message_width = option.rect.width()-(rect.right()+30)
@@ -427,6 +458,10 @@ class CompareWidget(QWidget, object):
         self.comp_list.model.itemChanged.connect(self.manage_ui_states)
         self.compare_button.clicked.connect(self.compare_action)
         self.export_button.clicked.connect(self.export_action)
+
+    def showEvent(self, a0: QShowEvent) -> None:
+        self.name_desc_manager()
+        return super().showEvent(a0)
 
     def eventFilter(self, source: QObject, event: QEvent) -> bool:
         """Event filter to customise events of ui children"""
@@ -639,10 +674,12 @@ class CompareWidget(QWidget, object):
 
     def lock(self, cancel_button: QPushButton) -> None:
         """Locks the UI for comparison"""
+        self.comp_list.model.blockSignals(True)
         self.pre_dropdown.setEnabled(False)
         self.post_dropdown.setEnabled(False)
         self.options.setEnabled(False)
-        self.comp_list.setEnabled(False)
+        # self.comp_list.setEnabled(False)
+        self.comp_list.lock_selection()
         # disable both buttons
         self.compare_button.setEnabled(False)
         self.export_button.setEnabled(False)
@@ -665,9 +702,11 @@ class CompareWidget(QWidget, object):
         self.pre_dropdown.setEnabled(True)
         self.post_dropdown.setEnabled(True)
         self.options.setEnabled(True)
-        self.comp_list.setEnabled(True)
+        # self.comp_list.setEnabled(True)
+        self.comp_list.unlock_selection()
         self.manage_ui_states()
         self.desc_edit.clear()
+        self.comp_list.model.blockSignals(False)
 
     @ pyqtSlot()
     def cancel(self) -> None:
