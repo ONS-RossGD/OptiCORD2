@@ -105,7 +105,8 @@ class VisualisationList(QListView):
         unlock = True
         items = [self.model.item(i) for i in range(1, self.model.rowCount())]
         for item in items:
-            if item.state <= VisualisationFile.LOADING:
+            if item.state in [VisualisationFile.LOADING,
+                              VisualisationFile.QUEUED]:
                 unlock = False
         if unlock:
             self.unlock.emit()
