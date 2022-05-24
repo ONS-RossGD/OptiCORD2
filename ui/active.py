@@ -94,14 +94,14 @@ class ActiveWidget(QWidget, object):
         self.nav_button_compare = NavButton("Compare", 'compare',
                                             CompareWidget(self.stack), self.stack, self.nav_frame)
         self.nav_button_compare.setObjectName("nav_button_compare")
-        self.nav_button_explore = NavButton("Explore", 'explore',
-                                            LoadWidget(self.stack), self.stack, self.nav_frame)
-        self.nav_button_explore.setObjectName("nav_button_explore")
+        # self.nav_button_explore = NavButton("Explore", 'explore',
+        #                                     LoadWidget(self.stack), self.stack, self.nav_frame)
+        # self.nav_button_explore.setObjectName("nav_button_explore")
         spacer = QtWidgets.QSpacerItem(20, 518, QtWidgets.QSizePolicy.Minimum,
                                        QtWidgets.QSizePolicy.Expanding)
         self.nav_frame_layout.addWidget(self.nav_button_load, 0, 0, 1, 1)
         self.nav_frame_layout.addWidget(self.nav_button_compare, 1, 0, 1, 1)
-        self.nav_frame_layout.addWidget(self.nav_button_explore, 2, 0, 1, 1)
+        # self.nav_frame_layout.addWidget(self.nav_button_explore, 2, 0, 1, 1)
         self.nav_frame_layout.addItem(spacer, 3, 0, 1, 1)
         self.nav_frame_layout.addWidget(self.expand_label, 4, 0, 1, 1)
 
@@ -114,11 +114,6 @@ class ActiveWidget(QWidget, object):
         else:
             self._collapse(False)
 
-        self.nav_button_load.clicked.connect(lambda: print("Load clicked"))
-        self.nav_button_compare.clicked.connect(
-            lambda: print("Compare clicked"))
-        self.nav_button_explore.clicked.connect(
-            lambda: print("Explore clicked"))
         self.expand_label.enterEvent = lambda e: self._expand_hover_enter(e)
         self.expand_label.leaveEvent = lambda e: self._expand_hover_leave(e)
         self.expand_label.mousePressEvent = lambda e: self._toggle_expand()
