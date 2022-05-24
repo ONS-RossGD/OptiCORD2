@@ -404,29 +404,34 @@ class Export():
         # Unstack the dataframe otherwise the date column will be an index,
         # this leaves us with the index of the original df where all rows that
         # do not contain a match of the desired string have been dropped.
-        missing_pre = stacked.str.match(
+        missing_pre = stacked.str.fullmatch(
             f'Missing in {self.pre}').replace(
             False, np.nan).dropna().unstack().index
-        missing_post = stacked.str.match(
+        missing_post = stacked.str.fullmatch(
             f'Missing in {self.post}').replace(
             False, np.nan).dropna().unstack().index
-        series_missing_pre = stacked.str.match(
+        series_missing_pre = stacked.str.fullmatch(
             f'Series not in {self.pre}').replace(
             False, np.nan).dropna().unstack().index
-        series_missing_post = stacked.str.match(
+        series_missing_post = stacked.str.fullmatch(
             f'Series not in {self.post}').replace(
             False, np.nan).dropna().unstack().index
         # get the index for both from the intersection of the missing_pre/post
         missing_both = missing_pre.intersection(missing_post)
-        # By default the value of missing data will be None
-        df['Missing Data'] = 'None'
+        # Detect whether or not there are any dates missing
+        # and set the default missing value respectively
+        if stacked.str.match('Date not in').any():
+            df['Missing Data'] = 'Date'
+        else:
+            df['Missing Data'] = 'None'
+
         # The below sets the value of Missing data in an if elif fashion so
         # order is important.
         df.loc[missing_pre, 'Missing Data'] = self.pre
         df.loc[missing_post, 'Missing Data'] = self.post
         df.loc[series_missing_pre, 'Missing Data'] = self.pre
         df.loc[series_missing_post, 'Missing Data'] = self.post
-        df.loc[missing_both, 'Missing Data'] = 'BOTH'
+        df.loc[missing_both, 'Missing Data'] = 'Both'
         # return the dataframe with missing data set as an index
         return df.set_index('Missing Data', append=True)
 

@@ -42,6 +42,7 @@ class ComparisonItem(QStandardItem):
     # states
     SELECT_ALL = auto()
     LONELY = auto()
+    IDLE = auto()
     QUEUED = auto()
     PROCESSING = auto()
     EXPORTING = auto()
@@ -54,7 +55,7 @@ class ComparisonItem(QStandardItem):
     def __init__(self, name: str) -> None:
         super(QStandardItem, self).__init__(name)
         self.name = name
-        self.state = self.QUEUED
+        self.state = self.IDLE
         self.msg = ''
 
     @pyqtSlot(str)
@@ -288,6 +289,10 @@ class ComparisonDeligate(QStyledItemDelegate):
         self.failed = QPixmap('./ui/resources/'
                               f'{QSettings().value("active_theme").folder}'
                               '/failed.svg')
+        # svg icon for queued
+        self.queued = QPixmap('./ui/resources/'
+                              f'{QSettings().value("active_theme").folder}'
+                              '/queued.svg')
 
     def paint(self, painter: QPainter, option: QStyleOptionViewItem,
               index: QModelIndex) -> None:
@@ -331,7 +336,11 @@ class ComparisonDeligate(QStyledItemDelegate):
                 pixmap = self.failed.scaled(option.rect.height()-vgap,
                                             option.rect.height()-vgap,
                                             Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            if item.state != ComparisonItem.QUEUED:
+            if item.state == ComparisonItem.QUEUED:
+                pixmap = self.queued.scaled(option.rect.height()-vgap,
+                                            option.rect.height()-vgap,
+                                            Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            if item.state != ComparisonItem.IDLE:
                 painter.drawPixmap(QPoint(rect.right()+hgap,
                                           option.rect.top()+(vgap/2)), pixmap)
         # set custom font to make message italic
@@ -667,8 +676,8 @@ class CompareWidget(QWidget, object):
                 self.post_dropdown.currentText(),
                 export_folder,
                 item)
-            QThreadPool.globalInstance().start(self.export_worker)
             self.export_worker.signals.finished.connect(self.try_unlock)
+            QThreadPool.globalInstance().start(self.export_worker)
 
     def lock(self, cancel_button: QPushButton) -> None:
         """Locks the UI for comparison"""
@@ -751,6 +760,7 @@ class ComparisonWorker(QRunnable):
             lambda text: self.item.update_msg(text))
         self.signals.update_tooltip.connect(
             lambda text: self.item.update_tooltip(text))
+        self.item.state = ComparisonItem.QUEUED
 
     def run(self) -> None:
         """"""
@@ -805,6 +815,7 @@ class ExportWorker(QRunnable):
             lambda text: self.item.update_msg(text))
         self.signals.update_tooltip.connect(
             lambda text: self.item.update_tooltip(text))
+        self.item.state = ComparisonItem.QUEUED
 
     def run(self) -> None:
         """"""
