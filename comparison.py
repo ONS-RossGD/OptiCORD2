@@ -191,9 +191,9 @@ class PandasComparison(Comparison):
         # to set the values of the diff df to the missing series
         # string per where they were missing
         diff_df[missing_rows ==
-                'left_only'] = f'Series not in {self.pre_position}'
+                'left_only'] = f'Series not in {self.post_position}'
         diff_df[missing_rows ==
-                'right_only'] = f'Series not in {self.post_position}'
+                'right_only'] = f'Series not in {self.pre_position}'
         # Missing dates in pre/post can be filtered by a simple
         # list comprehension and set to the missing date string
         diff_df[[d for d in diff_df.columns if d not in self.pre.columns]

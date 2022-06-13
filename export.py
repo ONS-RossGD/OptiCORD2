@@ -356,7 +356,9 @@ class Export():
     def _align_index(self, pre: pd.DataFrame, post: pd.DataFrame) -> tuple:
         """Reindex the pre dataframe so that it's in the same order as
         post."""
-        pre = pre.reorder_levels(post.index.names, axis=0)
+        # only re-order the index if there is more than one index column
+        if len(pre.index.names) + len(post.index.names) > 2:
+            pre = pre.reorder_levels(post.index.names, axis=0)
         return pre, post
 
     def _drop_zero_series(self, pre: pd.DataFrame, post: pd.DataFrame,
