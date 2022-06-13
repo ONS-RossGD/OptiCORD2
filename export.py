@@ -304,12 +304,12 @@ class Export():
         false if not."""
         # independantly check the columns as pd.equals only checks shape
         # and values
-        if self.pre.columns.tolist() != self.post.columns.tolist():
+        if pre.columns.tolist() != post.columns.tolist():
             return True
         # independantly check the index for the same reasons as above
-        if not self.pre.sort_index().index.equals(self.post.sort_index().index):
+        if not pre.sort_index().index.equals(post.sort_index().index):
             return True
-        return not self.post.sort_index().equals(self.pre.sort_index())
+        return not post.sort_index().equals(pre.sort_index())
 
     def _get_compared(self, path: str) -> tuple:
         """Read the comparison data dataframe as well as the nans dataframe
