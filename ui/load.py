@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QDialog, QFileDialog, QListView, QWidget
 from PyQt5.uic import loadUi
 from uuid import uuid4
 from ui.new import NewPosition
-from ui.visualisations import VisualisationFile, VisualisationList
+from ui.visualisations import VisualisationList
 from util import StandardFormats, TempFile
 import h5py
 
@@ -139,6 +139,8 @@ class LoadWidget(QWidget, object):
         self.drag_drop_tab.file_added.connect(self.vis_list.add_file)
         self.vis_list.lock.connect(self.lock)
         self.vis_list.unlock.connect(self.unlock)
+        TempFile.proc_manager.locked.connect(self.lock)
+        TempFile.proc_manager.unlocked.connect(self.unlock)
 
     def check_drop(self, urls: List[QUrl]) -> bool:
         """Check that all given files are local files of 
@@ -287,6 +289,8 @@ class LoadWidget(QWidget, object):
         self.position_dropdown.setEnabled(False)
         self.new_position.setEnabled(False)
         self.import_position.setEnabled(False)
+        # lock in the process manager
+        TempFile.proc_manager.lock()
 
     @ pyqtSlot()
     def unlock(self) -> None:
@@ -294,3 +298,5 @@ class LoadWidget(QWidget, object):
         self.position_dropdown.setEnabled(True)
         self.new_position.setEnabled(True)
         self.import_position.setEnabled(True)
+        # unlock in the process manager
+        TempFile.proc_manager.unlock()

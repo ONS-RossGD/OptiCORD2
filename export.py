@@ -422,11 +422,12 @@ class Export():
         missing_both = missing_pre.intersection(missing_post)
         # Detect whether or not there are any dates missing
         # and set the default missing value respectively
+        missing_col = pd.DataFrame(index=df.index, columns=['Missing Data'])
         if stacked.str.match('Date not in').any():
-            df['Missing Data'] = 'Date'
+            missing_col['Missing Data'] = 'Date'
         else:
-            df['Missing Data'] = 'None'
-
+            missing_col['Missing Data'] = 'None'
+        df = pd.concat([df, missing_col], axis=1)
         # The below sets the value of Missing data in an if elif fashion so
         # order is important.
         df.loc[missing_pre, 'Missing Data'] = self.pre

@@ -1,4 +1,5 @@
 import os
+import typing
 from uuid import uuid4
 import h5py
 from PyQt5.QtWidgets import QApplication, QFileDialog
@@ -14,24 +15,30 @@ import logging
 log = logging.getLogger('OptiCORD')
 
 
-def set_window_title(title: str) -> None:
-    """Sets the title of the Main Window"""
-    # find the main window from the applications top level widgets
+def findMainWindow() -> typing.Union[MainWindow, None]:
+    # Global function to find the (open) QMainWindow in application
     mw_list = [w for w in QApplication.topLevelWidgets()
                if type(w) is MainWindow]
     # sense check we found the main window correctly
     if len(mw_list) != 1:
         raise Exception('Wrong number of MainWindows')
-    mw = mw_list[0]
+    return mw_list[0]
+
+
+def set_window_title(title: str) -> None:
+    """Sets the title of the Main Window"""
+    mw = findMainWindow()
     mw.setWindowTitle(f'OptiCORD - Editing Change Tracker: {title}')
 
 
 def create_new(parent: QObject) -> None:
     """Sets up the NewDialog and creates a new change tracker file
     using user inputs"""
+    mw = findMainWindow()
+    mw.close()
     new_dialog = NewTracker(parent)
     if not new_dialog.exec():
-        return  # return if user closes dialog without meeting accept criteria
+        return mw.show()  # return if user closes dialog without meeting accept criteria
     TempFile.create_new()  # init the temp file for future editing
     # write attributes to the new file and init groups
     TempFile.manager.lockForWrite()
@@ -48,15 +55,20 @@ def create_new(parent: QObject) -> None:
     # redirect to activity window
     parent.window().setCentralWidget(ActiveWidget(parent.window()))
     set_window_title(new_dialog.name)
+    mw.show()
 
 
 def open_file(parent: QObject) -> None:
     """Creates an open file dialog window for user to select an existing
     .opticord file to open"""
+    mw = findMainWindow()
     filepath, _ = QFileDialog.getOpenFileName(parent, 'Open existing...',
                                               QSettings().value('last_open_location', ''), '*.opticord')
+    mw.close()
     if not filepath:
-        return  # return if user closes dialog without selecting a file
+        print("no filepath")
+        mw.show()
+        return   # return if user closes dialog without selecting a file
     log.debug(f'Opening from existing file: {filepath}')
     QSettings().setValue('last_open_location',  # update last_open_location
                          '/'.join(filepath.split('/')[:-1]))
@@ -71,6 +83,7 @@ def open_file(parent: QObject) -> None:
     # redirect to activity window
     parent.window().setCentralWidget(ActiveWidget(parent.window()))
     set_window_title(name)
+    mw.show()
 
 
 def save(parent: QObject) -> bool:

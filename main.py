@@ -35,16 +35,18 @@ def copy_settings():
 
 def setup_logging():
     """Sets up logging module for use later on"""
-    log.setLevel(logging.DEBUG)
-    rf = RotatingFileHandler(f'{root}/logs/{os.getlogin()}.log',
-                             maxBytes=100000, backupCount=1)
-    rf.setLevel(logging.DEBUG)
-    fmt = logging.Formatter('%(asctime)s %(threadName)-12s'
-                            ' %(levelname)-8s: %(message)s',
-                            datefmt='%m-%d %H:%M')
-    rf.setFormatter(fmt)
-    log.addHandler(rf)
-    log.debug('----------------------NEW SESSION----------------------')
+
+
+log.setLevel(logging.DEBUG)
+rf = RotatingFileHandler(f'{root}/logs/{os.getlogin()}.log',
+                         maxBytes=100000, backupCount=1)
+rf.setLevel(logging.DEBUG)
+fmt = logging.Formatter('%(asctime)s %(threadName)-12s'
+                        ' %(levelname)-8s: %(message)s',
+                        datefmt='%m-%d %H:%M')
+rf.setFormatter(fmt)
+log.addHandler(rf)
+log.debug('----------------------NEW SESSION----------------------')
 
 
 def main():

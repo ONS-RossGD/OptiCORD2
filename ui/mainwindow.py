@@ -4,7 +4,7 @@ import re
 from PyQt5 import QtCore
 from PyQt5.QtCore import QObject, QSettings, Qt
 from PyQt5.QtGui import QCloseEvent, QPixmap
-from PyQt5.QtWidgets import QAction, QApplication, QDialog, QDialogButtonBox, QMainWindow
+from PyQt5.QtWidgets import QAction, QApplication, QDialog, QDialogButtonBox, QMainWindow, QMessageBox
 from PyQt5.uic import loadUi
 from themes import ThemeRegistry, Theme
 import actions
@@ -137,6 +137,9 @@ class MainWindow(QMainWindow, object):
     def closeEvent(self, a0: QCloseEvent) -> None:
         """Additional checks when user tries to intentionally close
         the window"""
+        if TempFile.proc_manager.processing:
+            QApplication.beep()
+            return a0.ignore()
         if TempFile.manager.changed:
             dlg = UnsavedChanges(self)
             # if user closes the popup or fails to save do not exit

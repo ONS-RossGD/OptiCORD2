@@ -114,6 +114,8 @@ class ComparisonList(QListView):
             self.viewport().update)
         # connect click with checkbox
         self.clicked.connect(self.toggle_item_check)
+        # init select all item
+        self.select_all = SelectAllItem()
 
     @pyqtSlot(QModelIndex)
     def toggle_item_check(self, index) -> None:
@@ -472,6 +474,8 @@ class CompareWidget(QWidget, object):
         self.comp_list.model.itemChanged.connect(self.manage_ui_states)
         self.compare_button.clicked.connect(self.compare_action)
         self.export_button.clicked.connect(self.export_action)
+        TempFile.proc_manager.locked.connect(self.lock)
+        TempFile.proc_manager.unlocked.connect(self.unlock)
 
     def showEvent(self, a0: QShowEvent) -> None:
         self.name_desc_manager()
@@ -652,7 +656,10 @@ class CompareWidget(QWidget, object):
         """Starts running ComparisonWorkers for checked list items that
         have not yet been compared."""
         log.debug(f'attempting comparison of {[i.name for i in items]}')
-        self.lock(self.compare_button)
+        self.lock()
+        # re-enable button controlling cancel operation
+        self.compare_button.setEnabled(True)
+        self.compare_button.setText('Cancel')
         log.debug(f'comparing {self.pre_dropdown.currentText()} vs '
                   f'{self.post_dropdown.currentText()}')
         for item in items:
@@ -676,7 +683,10 @@ class CompareWidget(QWidget, object):
             return desc
         log.debug('attempting export')
         items = self.comp_list.get_checked_items()['Item'].tolist()
-        self.lock(self.export_button)
+        self.lock()
+        # re-enable button controlling cancel operation
+        self.export_button.setEnabled(True)
+        self.export_button.setText('Cancel')
         for item in items:
             self.export_worker = ExportWorker(
                 _get_description(),
@@ -688,20 +698,18 @@ class CompareWidget(QWidget, object):
             self.signals.cancel.connect(self.export_worker.cancel)
             QThreadPool.globalInstance().start(self.export_worker)
 
-    def lock(self, cancel_button: QPushButton) -> None:
+    def lock(self) -> None:
         """Locks the UI for comparison"""
         self.comp_list.model.blockSignals(True)
         self.pre_dropdown.setEnabled(False)
         self.post_dropdown.setEnabled(False)
         self.options.setEnabled(False)
-        # self.comp_list.setEnabled(False)
         self.comp_list.lock_selection()
         # disable both buttons
         self.compare_button.setEnabled(False)
         self.export_button.setEnabled(False)
-        # re-enable the one controlling cancel operation
-        cancel_button.setEnabled(True)
-        cancel_button.setText('Cancel')
+        # lock in the process manager
+        TempFile.proc_manager.lock()
 
     @ pyqtSlot()
     def try_unlock(self) -> None:
@@ -726,11 +734,12 @@ class CompareWidget(QWidget, object):
         self.pre_dropdown.setEnabled(True)
         self.post_dropdown.setEnabled(True)
         self.options.setEnabled(True)
-        # self.comp_list.setEnabled(True)
         self.comp_list.unlock_selection()
         self.manage_ui_states()
         self.desc_edit.clear()
         self.comp_list.model.blockSignals(False)
+        # unlock in the process manager
+        TempFile.proc_manager.unlock()
 
     def ask_export(self) -> str:
         """Starts a pop-up for user to choose export folder."""

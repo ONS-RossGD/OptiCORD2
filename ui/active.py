@@ -1,11 +1,12 @@
 from PyQt5 import QtCore
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QCursor, QMouseEvent, QPixmap, QTransform
-from PyQt5.QtCore import QEvent, QObject, QSettings, Qt, pyqtSignal
+from PyQt5.QtCore import QEvent, QObject, QSettings, Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QFrame, QLabel, QStackedWidget, QWidget
 from PyQt5.uic import loadUi
 from ui.load import LoadWidget
 from ui.compare import CompareWidget
+from util import TempFile
 
 
 class NavButton(QFrame):
@@ -21,6 +22,7 @@ class NavButton(QFrame):
         self.parent = parent
         self.stack = stack
         self.widget = widget
+        self.nav_buttons = self.parent.findChildren(NavButton)
         # add widget to stack
         self.stack.addWidget(widget)
         # get theme folder
@@ -29,16 +31,18 @@ class NavButton(QFrame):
         self.pixmap = QPixmap(
             f'./ui/resources/{theme_folder}/{svg}.svg')
         # re-scale icons
-        self.icon.setPixmap(self.pixmap.scaled(
+        self.nav_icon.setPixmap(self.pixmap.scaled(
             30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation))
 
         self._retranslate()
 
         self.enterEvent = lambda e: self._enter(e)
+        TempFile.proc_manager.locked.connect(lambda: self.setEnabled(False))
+        TempFile.proc_manager.unlocked.connect(lambda: self.setEnabled(True))
 
     def _retranslate(self) -> None:
         _translate = QtCore.QCoreApplication.translate
-        self.text_label.setText(_translate(self.objectName(), self.text))
+        self.nav_text.setText(_translate(self.objectName(), self.text))
 
     def _enter(self, a0: QEvent) -> None:
         """Changes the cursor to a hand when over the button"""
@@ -109,7 +113,7 @@ class ActiveWidget(QWidget, object):
         self.nav_button_load.activate()
 
         # initialise navbar state depending on user setting
-        if QSettings().value('navbar_expanded') == 'true':
+        if QSettings().value('navbar_expanded', 'true') == 'true':
             self._expand(False)
         else:
             self._collapse(False)
@@ -121,7 +125,7 @@ class ActiveWidget(QWidget, object):
     def _get_expand_icon(self, hover: bool) -> QPixmap:
         """Returns a QPixmap of the expanded icon in the
         correct state given the hover and expanded inputs"""
-        if QSettings().value('navbar_expanded', True) == 'true':
+        if QSettings().value('navbar_expanded', 'true') == 'true':
             transformation = self.rotate_collapse
         else:
             transformation = self.rotate_expand
@@ -146,7 +150,7 @@ class ActiveWidget(QWidget, object):
 
     def _expand(self, hovering: bool) -> None:
         """Expands the navbar"""
-        [navbutton.text_label.show() for navbutton in
+        [navbutton.nav_text.show() for navbutton in
             self.findChildren(NavButton)]
         # align to right
         self.expand_label.setAlignment(
@@ -156,7 +160,7 @@ class ActiveWidget(QWidget, object):
 
     def _collapse(self, hovering: bool) -> None:
         """Collapses the navbar"""
-        [navbutton.text_label.hide() for navbutton in
+        [navbutton.nav_text.hide() for navbutton in
             self.findChildren(NavButton)]
         # align to center
         self.expand_label.setAlignment(QtCore.Qt.AlignCenter)
@@ -164,9 +168,9 @@ class ActiveWidget(QWidget, object):
 
     def _toggle_expand(self) -> None:
         """Toggle the navbar state adjusting settings to match"""
-        if QSettings().value('navbar_expanded', True) == 'true':
-            QSettings().setValue('navbar_expanded', False)
+        if QSettings().value('navbar_expanded', 'true') == 'true':
+            QSettings().setValue('navbar_expanded', 'false')
             self._collapse(True)
         else:
-            QSettings().setValue('navbar_expanded', True)
+            QSettings().setValue('navbar_expanded', 'true')
             self._expand(True)

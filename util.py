@@ -1,7 +1,9 @@
 
+from concurrent.futures import process
 import logging
+import typing
 from PyQt5.QtGui import QValidator, QPainter
-from PyQt5.QtCore import QDir, QObject, QReadWriteLock, QTemporaryFile, QPropertyAnimation, QRectF, QSize, Qt, pyqtProperty
+from PyQt5.QtCore import QDir, QObject, QReadWriteLock, QTemporaryFile, QPropertyAnimation, QRectF, QSize, Qt, pyqtProperty, pyqtSignal, pyqtSlot
 from shutil import copyfile
 from PyQt5.QtWidgets import QApplication, QAbstractButton, QSizePolicy
 import os
@@ -27,6 +29,25 @@ class FileManager(QReadWriteLock):
         return super().lockForWrite()
 
 
+class ProcessingManager(QObject):
+    """Manager to track running processes witin OptiCORD"""
+    locked = pyqtSignal()
+    unlocked = pyqtSignal()
+    processing: bool = False
+
+    @pyqtSlot()
+    def lock(self):
+        if not self.processing:
+            self.processing = True
+            self.locked.emit()
+
+    @pyqtSlot()
+    def unlock(self):
+        if self.processing:
+            self.processing = False
+            self.unlocked.emit()
+
+
 class TempFile:
     """Holds information of the temporary file where changes are made
     before saving."""
@@ -34,6 +55,7 @@ class TempFile:
     recovery_path: str = ''
     path: str = ''
     manager: FileManager = FileManager()
+    proc_manager: ProcessingManager = ProcessingManager()
 
     def check_existing() -> bool:
         """Checks for an existing TempFile in case user wants to 
@@ -49,6 +71,7 @@ class TempFile:
 
     def create_new() -> None:
         """Creates a brand new temp file"""
+        TempFile.reset()
         f = QTemporaryFile(QDir.temp().absoluteFilePath(
             'OptiCORD-XXXXXX.tmp'))
         # open and close the temp file to ensure it gets a fileName
@@ -60,6 +83,7 @@ class TempFile:
 
     def create_from_existing(existing_path: str) -> None:
         """Creates a temp file by copying an existing file"""
+        TempFile.reset()
         log.debug('creating temp file from existing')
         f = QTemporaryFile(QDir.temp().absoluteFilePath(
             'OptiCORD-XXXXXX.tmp'))
@@ -94,6 +118,14 @@ class TempFile:
         """Delete's the temp file (if it exists)"""
         if TempFile.path != '':
             os.remove(TempFile.path)
+
+    def reset() -> None:
+        """Reset the TempFile as if it were brand new"""
+        TempFile.saved_path = ''
+        TempFile.recovery_path = ''
+        TempFile.path = ''
+        TempFile.manager = FileManager()
+        TempFile.proc_manager = ProcessingManager()
 
 
 class MetaDict(dict):

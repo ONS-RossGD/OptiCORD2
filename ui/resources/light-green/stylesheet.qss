@@ -2002,6 +2002,11 @@ NavButton#nav_button_load:hover{
     background: rgba(50, 223, 50, 0.5);
 }
 
+QLabel#nav_icon,
+QLabel#nav_text{
+    background: transparent;
+}
+
 QFrame#nav_frame{
     border: 0px;
     border-right: 0.04em solid #31363b;
