@@ -477,10 +477,6 @@ class CompareWidget(QWidget, object):
         TempFile.proc_manager.locked.connect(self.lock)
         TempFile.proc_manager.unlocked.connect(self.unlock)
 
-    def showEvent(self, a0: QShowEvent) -> None:
-        self.name_desc_manager()
-        return super().showEvent(a0)
-
     def eventFilter(self, source: QObject, event: QEvent) -> bool:
         """Event filter to customise events of ui children"""
         # load available positions in dropdown menus
