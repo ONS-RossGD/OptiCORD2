@@ -18,18 +18,27 @@ from PyQt5.QtCore import QSettings
 from ui.resources import resource_init  # looks redundant but isn't
 from util import TempFile
 from tables import NaturalNameWarning
+try:
+    import pyi_splash
+    splash = True
+except:
+    splash = False
+    pass
 
 log = logging.getLogger('OptiCORD')
 root = os.getcwd()
 
 
 def copy_settings():
+    """Copys user local settings file to the logs folder for 
+    debugging purposes"""
     try:
         copyfile(
             f'C:/Users/{os.getlogin()}/AppData/Roaming/ONS/OptiCORD.ini',
             f'{root}/logs/{os.getlogin()}.ini'
         )
     except:
+        log.exception('User settings failed to copy')
         pass
 
 
@@ -49,8 +58,7 @@ log.addHandler(rf)
 log.debug('----------------------NEW SESSION----------------------')
 
 
-def main():
-    """Main loop"""
+if __name__ == "__main__":
     app = QApplication(sys.argv)
     # set up the path for QSettings so it can be accessed anywhere
     app.setApplicationName("OptiCORD")
@@ -70,6 +78,8 @@ def main():
     mw.setWindowTitle(f'OptiCORD v{__version__}')
     # initially show the welcome page
     mw.setCentralWidget(welcome.WelcomePage(mw))
+    if splash:
+        pyi_splash.close()
     mw.show()  # begin showing to user
     TempFile.check_existing()  # check if OptiCORD closed unexpectedly
     if TempFile.recovery_path:
@@ -81,7 +91,3 @@ def main():
         log.exception('System excited with exception:\n')
     finally:
         copy_settings()
-
-
-if __name__ == "__main__":
-    main()

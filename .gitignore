@@ -6,4 +6,5 @@ logs
 test files
 test.py
 test.ui
-exe
+build
+dist

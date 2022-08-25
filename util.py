@@ -1,7 +1,5 @@
 
-from concurrent.futures import process
 import logging
-import typing
 from PyQt5.QtGui import QValidator, QPainter
 from PyQt5.QtCore import QDir, QObject, QReadWriteLock, QTemporaryFile, QPropertyAnimation, QRectF, QSize, Qt, pyqtProperty, pyqtSignal, pyqtSlot
 from shutil import copyfile
@@ -9,7 +7,6 @@ from PyQt5.QtWidgets import QApplication, QAbstractButton, QSizePolicy
 import os
 import json
 import h5py
-from test_scripts import visualisation_compression_test
 
 log = logging.getLogger('OptiCORD')
 
