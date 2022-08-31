@@ -16,7 +16,7 @@ from actions import attempt_recovery
 from ui import mainwindow, welcome
 from PyQt5.QtCore import QSettings
 from ui.resources import resource_init  # looks redundant but isn't
-from util import TempFile
+from util import TempFile, resource_path
 from tables import NaturalNameWarning
 try:
     import pyi_splash
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     warnings.filterwarnings('ignore', category=NaturalNameWarning)
     mw = mainwindow.MainWindow()  # creates the main window instance
     # set the icon
-    mw.setWindowIcon(QIcon('./ui/resources/OptiCORD_icon.png'))
+    mw.setWindowIcon(QIcon(resource_path()+'/ui/resources/OptiCORD_icon.png'))
     # set the window title
     mw.setWindowTitle(f'OptiCORD v{__version__}')
     # initially show the welcome page

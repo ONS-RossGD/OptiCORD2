@@ -11,7 +11,7 @@ import h5py
 import pandas as pd
 from comparison import InvalidComparison, PandasComparison
 from export import Export, ExportOptions
-from util import CharacterSet, NameValidator, StandardFormats, TempFile
+from util import CharacterSet, NameValidator, StandardFormats, TempFile, resource_path
 
 log = logging.getLogger('OptiCORD')
 
@@ -276,23 +276,23 @@ class ComparisonDeligate(QStyledItemDelegate):
         super().__init__(parent=parent)
         self.list = parent
         # svg animation for loading
-        self.loading = QSvgRenderer('./ui/resources/'
+        self.loading = QSvgRenderer(resource_path()+'/ui/resources/'
                                     f'{QSettings().value("active_theme").folder}'
                                     '/loading.svg', parent)
         # svg animation for exporting
-        self.exporting = QSvgRenderer('./ui/resources/'
+        self.exporting = QSvgRenderer(resource_path()+'/ui/resources/'
                                       f'{QSettings().value("active_theme").folder}'
                                       '/exporting.svg', parent)
         # svg icon for success
-        self.success = QPixmap('./ui/resources/'
+        self.success = QPixmap(resource_path()+'/ui/resources/'
                                f'{QSettings().value("active_theme").folder}'
                                '/success.svg')
         # svg icon for failed
-        self.failed = QPixmap('./ui/resources/'
+        self.failed = QPixmap(resource_path()+'/ui/resources/'
                               f'{QSettings().value("active_theme").folder}'
                               '/failed.svg')
         # svg icon for queued
-        self.queued = QPixmap('./ui/resources/'
+        self.queued = QPixmap(resource_path()+'/ui/resources/'
                               f'{QSettings().value("active_theme").folder}'
                               '/queued.svg')
 
@@ -394,7 +394,7 @@ class ExportDialog(QDialog, object):
                  name_guess: str) -> None:
         super(QDialog, self).__init__(parent, Qt.WindowCloseButtonHint)
         # load the vanilla elements from QT Designer file
-        loadUi("./ui/export.ui", self)
+        loadUi(resource_path()+"/ui/export.ui", self)
         self.folder = folder
         self.name_guess = name_guess
         self.name_edit.setText(self.name_guess)
@@ -449,7 +449,7 @@ class CompareWidget(QWidget, object):
     def __init__(self, parent: QObject) -> None:
         super(QWidget, self).__init__(parent)
         # load the vanilla elements from QT Designer file
-        loadUi("./ui/compare.ui", self)
+        loadUi(resource_path()+"/ui/compare.ui", self)
         # magic line to get styling to work
         self.pre_dropdown.setView(QListView(self))
         self.post_dropdown.setView(QListView(self))

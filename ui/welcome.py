@@ -3,6 +3,7 @@ from PyQt5.QtGui import QCursor, QPixmap
 from PyQt5.QtWidgets import QGroupBox, QWidget
 from PyQt5.uic import loadUi
 import actions
+from util import resource_path
 
 
 class WelcomePage(QWidget, object):
@@ -12,14 +13,14 @@ class WelcomePage(QWidget, object):
     def __init__(self, parent: QObject):
         super(QWidget, self).__init__(parent)
         # load the vanilla elements from QT Designer file
-        loadUi("./ui/welcome.ui", self)
+        loadUi(resource_path()+"/ui/welcome.ui", self)
         # get theme folder
         theme_folder = QSettings().value("active_theme").folder
         # create icon pixmaps
         self.new_pixmap = QPixmap(
-            f'./ui/resources/{theme_folder}/new_project.svg')
+            f'{resource_path()}/ui/resources/{theme_folder}/new_project.svg')
         self.open_pixmap = QPixmap(
-            f'./ui/resources/{theme_folder}/open_project.svg')
+            f'{resource_path()}/ui/resources/{theme_folder}/open_project.svg')
         # re-scale icons
         self.new_group_image.setPixmap(self.new_pixmap.scaled(
             75, 75, Qt.KeepAspectRatio, Qt.SmoothTransformation))

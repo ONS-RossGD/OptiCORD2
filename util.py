@@ -1,4 +1,4 @@
-
+import sys
 import logging
 from PyQt5.QtGui import QValidator, QPainter
 from PyQt5.QtCore import QDir, QObject, QReadWriteLock, QTemporaryFile, QPropertyAnimation, QRectF, QSize, Qt, pyqtProperty, pyqtSignal, pyqtSlot
@@ -9,6 +9,17 @@ import json
 import h5py
 
 log = logging.getLogger('OptiCORD')
+
+
+def resource_path():
+    """Gets the resource path for in development or production"""
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.dirname(sys.argv[0])
+
+    return base_path
 
 
 class StandardFormats():

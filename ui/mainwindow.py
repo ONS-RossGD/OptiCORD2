@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QAction, QApplication, QDialog, QDialogButtonBox, QM
 from PyQt5.uic import loadUi
 from themes import ThemeRegistry, Theme
 import actions
-from util import TempFile
+from util import TempFile, resource_path
 
 
 class QThemeAction(QAction):
@@ -63,12 +63,12 @@ class UnsavedChanges(QDialog):
 
     def __init__(self, parent: QObject) -> None:
         super(QDialog, self).__init__(parent, Qt.WindowTitleHint)
-        loadUi("./ui/unsaved_changes.ui", self)
+        loadUi(resource_path()+"/ui/unsaved_changes.ui", self)
         # get theme folder
         theme_folder = QSettings().value("active_theme").folder
         # create icon pixmap
         self.pixmap = QPixmap(
-            f'./ui/resources/{theme_folder}/message_warning.svg')
+            f'{resource_path()}/ui/resources/{theme_folder}/message_warning.svg')
         # re-scale icon
         self.icon_label.setPixmap(self.pixmap.scaled(
             60, 60, Qt.KeepAspectRatio, Qt.SmoothTransformation))
@@ -109,7 +109,7 @@ class MainWindow(QMainWindow, object):
 
     def __init__(self):
         super(QMainWindow, self).__init__()
-        loadUi("./ui/mainwindow.ui", self)
+        loadUi(resource_path()+"/ui/mainwindow.ui", self)
         self.themes = ThemeRegistry()  # load all themes
         # apply the users selected theme defaulted to dark purple
         QSettings().value("active_theme", self.themes[2]).apply()

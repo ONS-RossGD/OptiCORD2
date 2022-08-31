@@ -12,7 +12,7 @@ from PyQt5.uic import loadUi
 import h5py
 import numpy as np
 import pandas as pd
-from util import TempFile
+from util import TempFile, resource_path
 from validation import InvalidVisualisation, validate_date, validate_filepath, validate_meta, validate_unique
 import logging
 
@@ -25,14 +25,14 @@ class DeleteConfirmation(QDialog):
 
     def __init__(self, parent: QObject, vis_name: str) -> None:
         super(QDialog, self).__init__(parent, Qt.WindowTitleHint)
-        loadUi("./ui/confirm_delete.ui", self)
+        loadUi(resource_path()+"/ui/confirm_delete.ui", self)
         self.text_label.setText(self.text_label.text().replace(
             '{vis_name}', vis_name))
         # get theme folder
         theme_folder = QSettings().value("active_theme").folder
         # create icon pixmap
         self.pixmap = QPixmap(
-            f'./ui/resources/{theme_folder}/message_warning.svg')
+            f'{resource_path()}/ui/resources/{theme_folder}/message_warning.svg')
         # re-scale icon
         self.icon_label.setPixmap(self.pixmap.scaled(
             60, 60, Qt.KeepAspectRatio, Qt.SmoothTransformation))
@@ -247,15 +247,15 @@ class VisualisationDeligate(QStyledItemDelegate):
         super().__init__(parent=parent)
         self.list = parent
         # svg animation for loading/queued
-        self.loading = QSvgRenderer('./ui/resources/'
+        self.loading = QSvgRenderer(resource_path()+'/ui/resources/'
                                     f'{QSettings().value("active_theme").folder}'
                                     '/loading.svg', parent)
         # svg icon for success
-        self.success = QPixmap('./ui/resources/'
+        self.success = QPixmap(resource_path()+'/ui/resources/'
                                f'{QSettings().value("active_theme").folder}'
                                '/success.svg')
         # svg icon for failed
-        self.failed = QPixmap('./ui/resources/'
+        self.failed = QPixmap(resource_path()+'/ui/resources/'
                               f'{QSettings().value("active_theme").folder}'
                               '/failed.svg')
 

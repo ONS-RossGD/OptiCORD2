@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QFrame, QLabel, QStackedWidget, QWidget
 from PyQt5.uic import loadUi
 from ui.load import LoadWidget
 from ui.compare import CompareWidget
-from util import TempFile
+from util import TempFile, resource_path
 
 
 class NavButton(QFrame):
@@ -17,7 +17,7 @@ class NavButton(QFrame):
     def __init__(self, text: str, svg: str, widget: QWidget,
                  stack: QStackedWidget, parent: QObject) -> None:
         super(QFrame, self).__init__(parent=parent)
-        loadUi("./ui/navbutton.ui", self)
+        loadUi(resource_path()+"/ui/navbutton.ui", self)
         self.text = text
         self.parent = parent
         self.stack = stack
@@ -29,7 +29,7 @@ class NavButton(QFrame):
         theme_folder = QSettings().value("active_theme").folder
         # create icon pixmaps
         self.pixmap = QPixmap(
-            f'./ui/resources/{theme_folder}/{svg}.svg')
+            f'{resource_path()}/ui/resources/{theme_folder}/{svg}.svg')
         # re-scale icons
         self.nav_icon.setPixmap(self.pixmap.scaled(
             30, 30, Qt.KeepAspectRatio, Qt.SmoothTransformation))
@@ -78,7 +78,7 @@ class ActiveWidget(QWidget, object):
 
     def __init__(self, parent: QObject) -> None:
         super(QWidget, self).__init__(parent)
-        loadUi("./ui/active.ui", self)
+        loadUi(resource_path()+"/ui/active.ui", self)
         self.expand_label = QLabel(self)
         self.expand_label.setObjectName("active_expand")
         # get theme folder
@@ -88,9 +88,9 @@ class ActiveWidget(QWidget, object):
         self.rotate_expand = QTransform().rotate(270)
         # create icon pixmaps
         self.expand_icon = QPixmap(
-            f'./ui/resources/{theme_folder}/double_arrow.svg')
+            f'{resource_path()}/ui/resources/{theme_folder}/double_arrow.svg')
         self.expand_icon_hover = QPixmap(
-            f'./ui/resources/{theme_folder}/double_arrow_hover.svg')
+            f'{resource_path()}/ui/resources/{theme_folder}/double_arrow_hover.svg')
 
         self.nav_button_load = NavButton("Load", 'import',
                                          LoadWidget(self.stack), self.stack, self.nav_frame)

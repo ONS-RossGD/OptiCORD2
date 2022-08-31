@@ -12,7 +12,7 @@ from PyQt5.uic import loadUi
 from uuid import uuid4
 from ui.new import NewPosition
 from ui.visualisations import VisualisationList
-from util import StandardFormats, TempFile
+from util import StandardFormats, TempFile, resource_path
 import h5py
 
 
@@ -22,7 +22,7 @@ class DragDrop(QWidget):
     def __init__(self, parent: QWidget, file_signal: pyqtSignal) -> None:
         super(QWidget, self).__init__(parent)
         # load the vanilla elements from QT Designer file
-        loadUi("./ui/drag_drop.ui", self)
+        loadUi(resource_path()+"/ui/drag_drop.ui", self)
         self.file_added = file_signal
         # signals
         self.browse.clicked.connect(self.browse_dialog)
@@ -44,7 +44,7 @@ class ImportExisting(QDialog):
     def __init__(self, parent: QWidget, filepath: str) -> None:
         super(QDialog, self).__init__(parent, Qt.WindowCloseButtonHint)
         # load the vanilla elements from QT Designer file
-        loadUi("./ui/import_existing.ui", self)
+        loadUi(resource_path()+"/ui/import_existing.ui", self)
         self.filepath = filepath
         self.pos_dict = dict()
         # read position names and descs from file
@@ -115,7 +115,7 @@ class LoadWidget(QWidget, object):
     def __init__(self, parent: QObject) -> None:
         super(QWidget, self).__init__(parent)
         # load the vanilla elements from QT Designer file
-        loadUi("./ui/load.ui", self)
+        loadUi(resource_path()+"/ui/load.ui", self)
         # fill the dropdown menu
         self.refresh_position_dropdown()
         # magic line to get styling to work

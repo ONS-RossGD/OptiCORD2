@@ -2,7 +2,7 @@ from PyQt5.QtCore import QObject, QSettings, Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QDialog
 from PyQt5.uic import loadUi
-from util import TempFile
+from util import TempFile, resource_path
 import h5py
 
 
@@ -12,12 +12,12 @@ class RecoveryPopup(QDialog, object):
     def __init__(self, parent: QObject) -> None:
         super(QDialog, self).__init__(parent, Qt.WindowTitleHint)
         # load the vanilla elements from QT Designer file
-        loadUi("./ui/recovery.ui", self)
+        loadUi(resource_path()+"/ui/recovery.ui", self)
         # get theme folder
         theme_folder = QSettings().value("active_theme").folder
         # create icon pixmap
         self.pixmap = QPixmap(
-            f'./ui/resources/{theme_folder}/recover.svg')
+            f'{resource_path()}/ui/resources/{theme_folder}/recover.svg')
         # re-scale icon
         self.icon_label.setPixmap(self.pixmap.scaled(
             60, 60, Qt.KeepAspectRatio, Qt.SmoothTransformation))

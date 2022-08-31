@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QApplication, QDialog, QMessageBox, QWidget
 from PyQt5.uic import loadUi
 import os
 import logging
-from util import CharacterSet, NameValidator
+from util import CharacterSet, NameValidator, resource_path
 
 log = logging.getLogger('OptiCORD')
 
@@ -15,7 +15,7 @@ class NewTracker(QDialog, object):
     def __init__(self, parent: QObject) -> None:
         super(QDialog, self).__init__(parent, Qt.WindowTitleHint)
         # load the vanilla elements from QT Designer file
-        loadUi("./ui/new_tracker.ui", self)
+        loadUi(resource_path()+"/ui/new_tracker.ui", self)
         self.name_edit.textChanged.connect(lambda:
                                            self.reset_invalid_input(self.name_edit))
 
@@ -55,7 +55,7 @@ class NewPosition(QDialog, object):
     def __init__(self, parent: QObject, existing: List[str]) -> None:
         super(QDialog, self).__init__(parent, Qt.WindowTitleHint)
         # load the vanilla elements from QT Designer file
-        loadUi("./ui/new_position.ui", self)
+        loadUi(resource_path()+"/ui/new_position.ui", self)
         self.existing = existing
         self.name_edit.textChanged.connect(lambda:
                                            self.reset_invalid_input(self.name_edit))
