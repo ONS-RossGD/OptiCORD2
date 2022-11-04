@@ -173,7 +173,7 @@ class NameValidator(QValidator):
         self.bad_chars = bad_chars
 
     def validate(self, value, pos):
-        if len(value) > 0:
+        if len(value) > 0 and len(value) <= 27:
             if value[-1] not in self.bad_chars:
                 return QValidator.Acceptable, value, pos
         else:

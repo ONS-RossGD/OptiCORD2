@@ -10,8 +10,8 @@ from PyQt5.QtCore import QEvent, QObject, QSettings, QUrl, Qt, pyqtSignal, pyqtS
 from PyQt5.QtWidgets import QDialog, QFileDialog, QListView, QWidget
 from PyQt5.uic import loadUi
 from uuid import uuid4
-from ui.new import NewPosition
-from ui.visualisations import VisualisationList
+from ui.new import NewPosition, EditPosition
+from visualisations import VisualisationList
 from util import StandardFormats, TempFile, resource_path
 import h5py
 
@@ -128,7 +128,9 @@ class LoadWidget(QWidget, object):
         self.load_tabs.addTab(self.drag_drop_tab, " Add Files ")
         self.load_tabs.setCurrentWidget(self.drag_drop_tab)
         self.load_tabs.installEventFilter(self)
+        self.edit_position.setEnabled(False)
         # signals
+        self.edit_position.clicked.connect(self.change_position)
         self.new_position.clicked.connect(self.create_position)
         self.import_position.clicked.connect(self.import_existing)
         self.position_dropdown.currentIndexChanged.connect(
@@ -187,9 +189,11 @@ class LoadWidget(QWidget, object):
         # if waiting for selection use placeholder text and return early
         if selection == 'Select position...':
             self.reset_load_tabs()
+            self.edit_position.setEnabled(False)
             return
         # enable loading files
         self.load_tabs.setEnabled(True)
+        self.edit_position.setEnabled(True)
         # create description list
         desc = []
         # get info from file
@@ -243,6 +247,28 @@ class LoadWidget(QWidget, object):
         if index == -1:  # -1 if item not found
             return print('NOT FOUND')  # TODO raise error ?
         return self.position_dropdown.setCurrentIndex(index)
+
+    def change_position(self) -> None:
+        """Create a new position based on user inputs"""
+        edit_dlg = EditPosition(self, self.get_positions(),
+                                self.position_dropdown.currentText())
+        # return if user closes dialog without meeting accept criteria
+        if not edit_dlg.exec():
+            return
+        # copy/paste a position with the new name and desc in file
+        # then delete the old one
+        TempFile.manager.lockForWrite()
+        with h5py.File(TempFile.path, 'r+') as store:
+            if self.position_dropdown.currentText() != edit_dlg.name:
+                store.copy(f'positions/{self.position_dropdown.currentText()}',
+                           f'positions/{edit_dlg.name}')
+            position = store[f'positions/{edit_dlg.name}']
+            position.attrs['description'] = edit_dlg.desc
+            if self.position_dropdown.currentText() != edit_dlg.name:
+                del store[f'positions/{self.position_dropdown.currentText()}']
+        TempFile.manager.unlock()
+        self.refresh_position_dropdown()
+        self.position_dropdown_select(edit_dlg.name)
 
     def create_position(self) -> None:
         """Create a new position based on user inputs"""
