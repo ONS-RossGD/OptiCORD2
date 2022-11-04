@@ -39,7 +39,7 @@ class SelectAllItem(QStandardItem):
 
 class ComparisonItem(QStandardItem):
     """Custom QListWidget item for comparison items"""
-    # states
+    # states, hardcoded for saving state in metadata
     SELECT_ALL = auto()
     LONELY = auto()
     IDLE = auto()
@@ -65,15 +65,6 @@ class ComparisonItem(QStandardItem):
         self.setCheckable(False)
         self.msg = f'Missing in {missing_in}'
         self.setEnabled(False)
-
-    @pyqtSlot(bool)
-    def update_diffs(self, diffs: bool) -> None:
-        """pyqtSlot to update item message accessible to operations
-        in other threads"""
-        if diffs:
-            self.msg = "Differences found"
-        else:
-            self.msg = "No differences"
 
     @pyqtSlot(str)
     def update_tooltip(self, tip: str) -> None:
@@ -191,10 +182,17 @@ class ComparisonList(QListView):
                 item.setCheckable(False)
                 item.setCheckState(2)
                 if item.name in existing:
-                    item.state = ComparisonItem.SUCCESS
                     meta = self.get_meta(f'comparisons/{pre_name} vs {post_name}'
                                          f'/{item.name}')
-                    item.update_diffs(meta['differences'])
+                    try:
+                        # enclosed in a try catch because earlier OptiCORD files
+                        # didn't hold this meta info
+                        item.state = meta['state']
+                        item.update_msg(meta['msg'])
+                    except:
+                        item.state = ComparisonItem.SUCCESS
+                        item.update_msg(
+                            'Differences found' if meta['differences'] else '')
             else:
                 if vis in pre:
                     missing = post_name
@@ -755,6 +753,7 @@ class ComparisonSignals(QObject):
     update_tooltip = pyqtSignal(str)
     update_msg = pyqtSignal(str)
     finished = pyqtSignal()
+    per_mismatch = pyqtSignal(str, str)
 
 
 class ComparisonWorker(QRunnable):

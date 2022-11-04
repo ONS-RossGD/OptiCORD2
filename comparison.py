@@ -25,6 +25,7 @@ class Comparison(ABC):
         self.post_position = post_position
         self.item = item
         self.vis = item.name
+        self.msg_list = []
         self.differences = False
         self.pre_path = f'positions/{pre_position}/{self.vis}'
         self.post_path = f'positions/{post_position}/{self.vis}'
@@ -32,16 +33,17 @@ class Comparison(ABC):
         self.post_meta = MetaDict(self.post_path)
         self.diff_pers = self._check_periodicities()
         self.diff_dims = self._check_dimensions()
-        self.periodicities = self._get_periodicities()
+        self.periodicities = self._get_per_match()
 
-    def _get_periodicities(self) -> list:
-        """Returns a list of periodicities to be compared"""
-        # set conversion so that order is made insignificant
-        if self.diff_pers:
-            return [per for per in self.post_meta["Periodicities"]
-                    if per in self.pre_meta["Periodicities"]]
-        else:
-            return self.post_meta["Periodicities"]
+    def _get_per_mismatch(self) -> list:
+        """Returns a list of periodicities that are not matched in either
+        visualisation"""
+        return list(set(self.pre_meta['Periodicities']) - set(self.post_meta['Periodicities']))+list(
+            set(self.post_meta['Periodicities']) - set(self.pre_meta['Periodicities']))
+
+    def _get_per_match(self) -> list:
+        """Returns a list of periodicities in both visualisations"""
+        return list(set(self.pre_meta['Periodicities']) & set(self.post_meta['Periodicities']))
 
     def _check_periodicities(self) -> bool:
         """Returns True if pre and post have the same periodicities, False
@@ -49,10 +51,7 @@ class Comparison(ABC):
         # set conversion so that order is made insignificant
         if set(self.pre_meta["Periodicities"]) != set(
                 self.post_meta["Periodicities"]):
-            # TODO finalise this warning
-            warnings.warn("Periodicities do not match")
             log.warning('Periodicities do not match')
-            self.differences = True
             return False
         else:
             return True
@@ -72,7 +71,7 @@ class Comparison(ABC):
         # check if dimensions are in the same order, if not warn
         if list(self.pre_meta["Dimensions"]) != list(
                 self.post_meta["Dimensions"]):
-            warnings.warn("Dimensions have different order in pre and post")
+            log.warning("Dimensions have different order in pre and post")
             return True
         else:
             return False
@@ -103,8 +102,13 @@ class Comparison(ABC):
             # TODO ensure " vs " cannot be included in position name
             self.save_to_file(f'comparisons/{self.pre_position}'
                               f' vs {self.post_position}/{self.vis}/{per}')
+        if self.differences:
+            self.msg_list.append('Differences found')
+        if self._get_per_mismatch():
+            self.msg_list.append(
+                f'Missing periodicities: {(", ").join(self._get_per_mismatch())}')
         self.save_metadata()
-        self.item.update_diffs(self.differences)
+        self.item.update_msg((', ').join(self.msg_list))
 
     @abstractmethod
     def _read(self, path: str):
@@ -130,6 +134,7 @@ class Comparison(ABC):
                          f' vs {self.post_position}/{self.vis}']
             comp.attrs['periodicities'] = self.periodicities
             comp.attrs['differences'] = self.differences
+            comp.attrs['msg'] = (', ').join(self.msg_list)
         TempFile.manager.unlock()
 
 
