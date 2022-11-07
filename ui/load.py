@@ -255,18 +255,6 @@ class LoadWidget(QWidget, object):
         # return if user closes dialog without meeting accept criteria
         if not edit_dlg.exec():
             return
-        # copy/paste a position with the new name and desc in file
-        # then delete the old one
-        TempFile.manager.lockForWrite()
-        with h5py.File(TempFile.path, 'r+') as store:
-            if self.position_dropdown.currentText() != edit_dlg.name:
-                store.copy(f'positions/{self.position_dropdown.currentText()}',
-                           f'positions/{edit_dlg.name}')
-            position = store[f'positions/{edit_dlg.name}']
-            position.attrs['description'] = edit_dlg.desc
-            if self.position_dropdown.currentText() != edit_dlg.name:
-                del store[f'positions/{self.position_dropdown.currentText()}']
-        TempFile.manager.unlock()
         self.refresh_position_dropdown()
         self.position_dropdown_select(edit_dlg.name)
 

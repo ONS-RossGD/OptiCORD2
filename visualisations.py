@@ -12,39 +12,11 @@ from PyQt5.uic import loadUi
 import h5py
 import numpy as np
 import pandas as pd
-from util import TempFile, resource_path
+from util import DeleteConfirmation, TempFile, resource_path
 from validation import InvalidVisualisation, validate_date, validate_filepath, validate_meta, validate_unique
 import logging
 
 log = logging.getLogger('OptiCORD')
-
-
-class DeleteConfirmation(QDialog):
-    """Popup window to get confirmation that visualisation is to be 
-    deleted"""
-
-    def __init__(self, parent: QObject, vis_name: str) -> None:
-        super(QDialog, self).__init__(parent, Qt.WindowTitleHint)
-        loadUi(resource_path()+"/ui/confirm_delete.ui", self)
-        self.text_label.setText(self.text_label.text().replace(
-            '{vis_name}', vis_name))
-        # get theme folder
-        theme_folder = QSettings().value("active_theme").folder
-        # create icon pixmap
-        self.pixmap = QPixmap(
-            f'{resource_path()}/ui/resources/{theme_folder}/message_warning.svg')
-        # re-scale icon
-        self.icon_label.setPixmap(self.pixmap.scaled(
-            60, 60, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-
-        self._retranslate()
-        QApplication.beep()
-
-    def _retranslate(self) -> None:
-        """creates automatically translated text"""
-        _translate = QtCore.QCoreApplication.translate
-        self.text_label.setText(_translate(self.objectName(),
-                                           self.text_label.text()))
 
 
 class VisualisationList(QListView):
@@ -186,16 +158,18 @@ class VisualisationList(QListView):
 
     def delete_visualisation(self, item: QStandardItem) -> None:
         """Delete the visualisation from the list and the file"""
-        delete_dlg = DeleteConfirmation(self, item.text())
+        delete_dlg = DeleteConfirmation(self,
+                                        f'Are you sure you want to delete the visualisation "{item.text()}" '
+                                        'and all of its data (including assosciated comparisons)?\n\nThis operation is irreversible.')
         if delete_dlg.exec():
             TempFile.manager.lockForWrite()
             with h5py.File(TempFile.path, 'r+') as store:
-                del(store[f'positions/{self.position}/{item.text()}'])
+                del (store[f'positions/{self.position}/{item.text()}'])
                 for comp in store['comparisons'].keys():
                     poss = comp.split(' vs ')
                     if self.position in poss:
                         if item.text() in store[f'comparisons/{comp}'].keys():
-                            del(store[f'comparisons/{comp}/{item.text()}'])
+                            del (store[f'comparisons/{comp}/{item.text()}'])
             TempFile.manager.unlock()
             self.remove_existing(item.text())
             self.model.removeRow(self.currentIndex().row())

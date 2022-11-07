@@ -35,7 +35,7 @@
       </font>
      </property>
      <property name="text">
-      <string>Are you sure you want to delete the visualisation &quot;{vis_name}&quot; and all of its data? This operation is irreversible.</string>
+      <string/>
      </property>
      <property name="wordWrap">
       <bool>true</bool>

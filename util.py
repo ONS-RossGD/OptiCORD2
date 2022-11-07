@@ -1,9 +1,10 @@
 import sys
 import logging
-from PyQt5.QtGui import QValidator, QPainter
-from PyQt5.QtCore import QDir, QObject, QReadWriteLock, QTemporaryFile, QPropertyAnimation, QRectF, QSize, Qt, pyqtProperty, pyqtSignal, pyqtSlot
+from PyQt5.QtGui import QValidator, QPainter, QPixmap
+from PyQt5.QtCore import QDir, QObject, QReadWriteLock, QTemporaryFile, QPropertyAnimation, QRectF, QSize, Qt, pyqtProperty, pyqtSignal, pyqtSlot, QCoreApplication, QSettings
 from shutil import copyfile
-from PyQt5.QtWidgets import QApplication, QAbstractButton, QSizePolicy
+from PyQt5.QtWidgets import QApplication, QAbstractButton, QSizePolicy, QDialog
+from PyQt5.uic import loadUi
 import os
 import json
 import h5py
@@ -325,3 +326,30 @@ class Switch(QAbstractButton):
     def enterEvent(self, event):  # pylint: disable=invalid-name
         self.setCursor(Qt.PointingHandCursor)
         super().enterEvent(event)
+
+
+class DeleteConfirmation(QDialog):
+    """Popup window to get confirmation that visualisation is to be 
+    deleted"""
+
+    def __init__(self, parent: QObject, text: str) -> None:
+        super(QDialog, self).__init__(parent, Qt.WindowTitleHint)
+        loadUi(resource_path()+"/ui/confirm_delete.ui", self)
+        self.text_label.setText(text)
+        # get theme folder
+        theme_folder = QSettings().value("active_theme").folder
+        # create icon pixmap
+        self.pixmap = QPixmap(
+            f'{resource_path()}/ui/resources/{theme_folder}/message_warning.svg')
+        # re-scale icon
+        self.icon_label.setPixmap(self.pixmap.scaled(
+            60, 60, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+
+        self._retranslate()
+        QApplication.beep()
+
+    def _retranslate(self) -> None:
+        """creates automatically translated text"""
+        _translate = QCoreApplication.translate
+        self.text_label.setText(_translate(self.objectName(),
+                                           self.text_label.text()))

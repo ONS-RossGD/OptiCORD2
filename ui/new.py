@@ -1,10 +1,11 @@
 from typing import List
-from PyQt5.QtCore import Qt, QObject
+from PyQt5.QtCore import Qt, QObject, pyqtSlot
 from PyQt5.QtWidgets import QApplication, QDialog, QMessageBox, QWidget
 from PyQt5.uic import loadUi
 import os
 import logging
-from util import CharacterSet, NameValidator, resource_path, MetaDict
+import h5py
+from util import CharacterSet, DeleteConfirmation, NameValidator, TempFile, resource_path, MetaDict
 
 log = logging.getLogger('OptiCORD')
 
@@ -133,11 +134,13 @@ class EditPosition(QDialog, object):
         existing.remove(old_name)
         self.existing = existing
         self.old_name = old_name
+        self.deleted = False
         self.old_desc = MetaDict(f'positions/{old_name}')['description']
         self.name_edit.setText(self.old_name)
         self.description_edit.setPlainText(self.old_desc)
         self.name_edit.textChanged.connect(lambda:
                                            self.reset_invalid_input(self.name_edit))
+        self.delete_button.clicked.connect(self.delete_position)
 
         self.name_validator = NameValidator(self, CharacterSet.PARTIAL)
         self.name_edit.setValidator(self.name_validator)
@@ -197,6 +200,53 @@ class EditPosition(QDialog, object):
             self.desc = self.description_edit.toPlainText()
         else:
             self.desc = f'Ask user "{os.getlogin()}" for more info.'
+        # edit position if everything is valid
+        self.edit_position()
+
+    def edit_position(self):
+        """Copy/paste a position with the new name and desc in file
+        then delete the old one"""
+        TempFile.manager.lockForWrite()
+        with h5py.File(TempFile.path, 'r+') as store:
+            if self.old_name != self.name:
+                # copy position to new name
+                store.copy(f'positions/{self.old_name}',
+                           f'positions/{self.name}')
+                # delete old position
+                del store[f'positions/{self.old_name}']
+                # copy assosciated comparisons to new name and delete old
+                for comp in store['comparisons'].keys():
+                    positions = comp.split(' vs ')
+                    if self.old_name == positions[0]:
+                        store.copy(
+                            f'comparisons/{comp}', f'comparisons/{self.name} vs {positions[1]}')
+                        del (store[f'comparisons/{comp}'])
+                    if self.old_name == positions[1]:
+                        store.copy(
+                            f'comparisons/{comp}', f'comparisons/{positions[0]} vs {self.name}')
+                        del (store[f'comparisons/{comp}'])
+            position = store[f'positions/{self.name}']
+            position.attrs['description'] = self.desc
+        TempFile.manager.unlock()
         log.debug(f'Edited position: {self.name}')
-        # return default ok action if everything is valid
+        return super().accept()
+
+    def delete_position(self):
+        """Raises a confirmation window and upon confirmation
+        deletes the posistion and closes this window."""
+        delete_dlg = DeleteConfirmation(self,
+                                        f'Are you sure you want to delete the position "{self.old_name}" '
+                                        'and all of its data (including assosciated comparisons)? '
+                                        '\n\nThis operation is irreversible.')
+        if delete_dlg.exec():
+            TempFile.manager.lockForWrite()
+            with h5py.File(TempFile.path, 'r+') as store:
+                del (store[f'positions/{self.old_name}'])
+                for comp in store['comparisons'].keys():
+                    positions = comp.split(' vs ')
+                    if self.old_name in positions:
+                        del (store[f'comparisons/{comp}'])
+            TempFile.manager.unlock()
+        self.name = 'Select position...'  # so it switches index after deletion
+        log.debug(f'Deleted position: {self.old_name}')
         return super().accept()
