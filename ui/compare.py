@@ -192,7 +192,7 @@ class ComparisonList(QListView):
                     except:
                         item.state = ComparisonItem.SUCCESS
                         item.update_msg(
-                            'Differences found' if meta['differences'] else '')
+                            'Differences found' if meta['differences'] else 'No Differences')
             else:
                 if vis in pre:
                     missing = post_name

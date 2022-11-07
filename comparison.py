@@ -102,8 +102,8 @@ class Comparison(ABC):
             # TODO ensure " vs " cannot be included in position name
             self.save_to_file(f'comparisons/{self.pre_position}'
                               f' vs {self.post_position}/{self.vis}/{per}')
-        if self.differences:
-            self.msg_list.append('Differences found')
+        self.msg_list.append(
+            'Differences found' if self.differences else 'No differences')
         if self._get_per_mismatch():
             self.msg_list.append(
                 f'Missing periodicities: {(", ").join(self._get_per_mismatch())}')
