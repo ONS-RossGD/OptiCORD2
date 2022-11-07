@@ -3,7 +3,8 @@ import typing
 from uuid import uuid4
 import h5py
 from PyQt5.QtWidgets import QApplication, QFileDialog
-from PyQt5.QtCore import QObject, QSettings
+from PyQt5.QtCore import QObject, QSettings, QUrl
+from PyQt5.QtGui import QDesktopServices
 from ui.active import ActiveWidget
 from ui.mainwindow import MainWindow
 from ui.new import NewTracker
@@ -127,3 +128,15 @@ def attempt_recovery(parent: QObject) -> None:
     TempFile.recover()
     # redirect to activity window
     parent.window().setCentralWidget(ActiveWidget(parent.window()))
+
+
+def user_guide(parent: QObject):
+    """Opens the user guide"""
+    url = QUrl("https://teams.microsoft.com/l/channel/19%3ABcKT__6ih0tBZqDwkaeQTtCXyGpD6ujI1YqTODzF8lw1%40thread.tacv2/tab%3A%3A04c69e0f-53a2-4492-93a1-05b435326799?groupId=d59e7db9-44b8-4118-93ce-41b343dce921&tenantId=078807bf-ce82-4688-bce0-0d811684dc46&allowXTenantAccess=false")
+    QDesktopServices.openUrl(url)
+
+
+def contact_support(parent: QObject):
+    """Opens the user guide"""
+    url = QUrl("https://teams.microsoft.com/l/entity/81fef3a6-72aa-4648-a763-de824aeafb7d/_djb2_msteams_prefix_1077049739?context=%7B%22subEntityId%22%3Anull%2C%22channelId%22%3A%2219%3ABcKT__6ih0tBZqDwkaeQTtCXyGpD6ujI1YqTODzF8lw1%40thread.tacv2%22%7D&groupId=d59e7db9-44b8-4118-93ce-41b343dce921&tenantId=078807bf-ce82-4688-bce0-0d811684dc46&allowXTenantAccess=false")
+    QDesktopServices.openUrl(url)

@@ -133,6 +133,10 @@ class MainWindow(QMainWindow, object):
             lambda: actions.save(self))
         self.action_save_as.triggered[bool].connect(
             lambda: actions.save_as(self))
+        self.action_user_guide.triggered[bool].connect(
+            lambda: actions.user_guide(self))
+        self.action_contact_support.triggered[bool].connect(
+            lambda: actions.contact_support(self))
 
     def closeEvent(self, a0: QCloseEvent) -> None:
         """Additional checks when user tries to intentionally close
