@@ -302,6 +302,7 @@ class LoadWidget(QWidget, object):
         """Locks the Load page UI"""
         self.position_dropdown.setEnabled(False)
         self.new_position.setEnabled(False)
+        self.edit_position.setEnabled(False)
         self.import_position.setEnabled(False)
         # lock in the process manager
         TempFile.proc_manager.lock()
@@ -311,6 +312,7 @@ class LoadWidget(QWidget, object):
         """Unlocks the Load page UI"""
         self.position_dropdown.setEnabled(True)
         self.new_position.setEnabled(True)
+        self.edit_position.setEnabled(True)
         self.import_position.setEnabled(True)
         # unlock in the process manager
         TempFile.proc_manager.unlock()
