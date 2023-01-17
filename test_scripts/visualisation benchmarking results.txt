@@ -1,0 +1,67 @@
+Below are the benchmarking results for visualisations of size 3kb - 13,900kb
+
+Time  Size Max Memory Usage
+no_comp        8.694307  1.95          182.375
+zlib           5.245819  1.66       180.550781
+blosc          4.956109  1.73       180.617188
+blosc:blosclz  6.512947  1.77       180.628906
+blosc:lz4      5.331132  1.65       180.636719
+blosc:lz4hc    7.599016  1.64       180.601562
+blosc:snappy   9.538154  1.66       182.597656
+blosc:zlib     4.544464  1.58          180.625
+blosc:zstd     4.134081  1.57       182.175781
+bencharking...
+                   Time   Size Max Memory Usage
+no_comp        8.015123  12.34       196.195312
+zlib           5.467054   9.57       193.261719
+blosc          6.753076  10.51       193.179688
+blosc:blosclz   7.15208  10.51       193.195312
+blosc:lz4      5.772054   9.93       193.152344
+blosc:lz4hc    4.417047   9.66       193.453125
+blosc:snappy   5.164726   9.95         193.1875
+blosc:zlib     4.184563   9.56       193.316406
+blosc:zstd     8.552578   9.41       195.144531
+bencharking...
+                   Time  Size Max Memory Usage
+no_comp        8.611923  2.14       183.839844
+zlib           4.869049  1.77       182.855469
+blosc          5.125113  1.89       182.855469
+blosc:blosclz  6.320554  1.65       182.855469
+blosc:lz4      4.443222  1.61       182.867188
+blosc:lz4hc    4.593346  1.63       182.988281
+blosc:snappy   7.341053  1.66       185.003906
+blosc:zlib     4.426367  1.58       182.996094
+blosc:zstd     3.589923  1.57       184.476562
+bencharking...
+                   Time   Size Max Memory Usage
+no_comp        4.658125  12.54       193.273438
+zlib            5.12294   9.71       193.722656
+blosc          4.642986  10.74       193.664062
+blosc:blosclz  4.582797  10.37       193.664062
+blosc:lz4      4.692911   9.92       193.664062
+blosc:lz4hc    3.336408   9.72       193.902344
+blosc:snappy   6.174922   9.93       193.679688
+blosc:zlib     5.448043   9.46       193.816406
+blosc:zstd     7.235075   9.39       195.933594
+bencharking...
+                   Time  Size Max Memory Usage
+no_comp        7.465559  1.05       182.234375
+zlib           8.220532  1.06       182.792969
+blosc          7.493112  1.05       182.792969
+blosc:blosclz  6.423528  1.03       180.785156
+blosc:lz4        7.1038  1.03       182.804688
+blosc:lz4hc    5.846613  1.03         180.8125
+blosc:snappy   7.180349  1.04       182.851562
+blosc:zlib     5.847292  1.02        180.84375
+blosc:zstd     5.997937  1.02       182.238281
+bencharking...
+                   Time  Size Max Memory Usage
+no_comp        5.889718  3.39       185.964844
+zlib           4.274136  1.23        185.84375
+blosc          6.500229  1.35       185.859375
+blosc:blosclz  6.963282  1.23       185.898438
+blosc:lz4       6.14233  1.21       185.796875
+blosc:lz4hc    4.521966  1.16       186.027344
+blosc:snappy   5.968921   1.3       183.453125
+blosc:zlib      4.86839  1.13       185.992188
+blosc:zstd     4.834319  1.12       187.222656
