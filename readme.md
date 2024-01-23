@@ -1,5 +1,5 @@
 # OptiCORD
-OptiCORD is a tool for quickly, reliably and repeatedly QA'ing data changes on CORD - but if you're here, you probably already knew that.
+OptiCORD is a tool for quickly, reliably and efficiently QA'ing data changes on CORD - the ONS statistical platform.
 
 OptiCORD uses PyQt5 to create and manage the interface, as well as the threading. The interface is loaded from defualt Qt elements saved in .ui files, then custom elements and functionality is built on top. As a general rule of thumb, any .ui file inside of the ui folder will have a .py file assosicated with the same name. The ui files can be created and edited using QtDesigner, which is installed with Anaconda by default and can be loaded by typing
 ```
